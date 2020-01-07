@@ -1,5 +1,11 @@
 # Shellcode
 
+## A list of linux x86 system call is stored here
+### Command
+```
+cat /usr/include/i386-linux-gnu/asm/unistd_32.h
+```
+
 ## Compile a NASM file 
 ### Commands
 ```
