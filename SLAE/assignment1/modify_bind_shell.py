@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 #import section
 import sys
 import socket
