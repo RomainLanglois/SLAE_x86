@@ -12,12 +12,9 @@ xor ecx, ecx
 xor edx, edx
 
 ;struct sockaddr_in struct
-;struct sockaddr_in {
-;	short	sin_family;
-;	u_short	sin_port;
-;	struct	in_addr sin_addr;
-;	char	sin_zero[8];
-;};
+;addr.sin_family = AF_INET;
+;addr.sin_port = htons(4444);
+;addr.sin_addr.s_addr = inet_addr("127.1.1.1");
 push eax
 push eax            ;padding for sin_zero sockaddr_in struct
 push 0x0101017f     ;initialize ip address to 127.1.1.1 
