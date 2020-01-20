@@ -308,11 +308,15 @@ main()
 }
 ```
 
-Let's compile it and execute it:
+We will use netcat to open a port on localhost:
+```console
+nc -lvnp 2222
+```
+
+On another terminal, we will compile it and execute it:
 ```console
 #gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
 #./test_shellcode 
 Shellcode Length:  14
-
 ```
 
