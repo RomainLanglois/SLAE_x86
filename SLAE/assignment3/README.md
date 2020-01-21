@@ -30,7 +30,16 @@ An amazing PDF from "hick.org" describes the whole process and how to use it:
 [Link to PDF](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf)
 
 ## Step 2: create a working demo of an egg hunter
-the egg hunter shellcode:
+The egg hunter code is divided in four major parts:
+1) The first step initialize the registers to NULL. 
+
+2) The next step is to perform a page alignment operation on the current pointer that is being validated by doing a bitwise OR operation on the low 16-bits of the current pointer (stored in edx) and then incrementing edx by one. This operation is equivalent to adding 0x1000 to the value in edx. The reason these two operations are separated is to avoid nullbytes inside the shellcode.
+
+3) The third step is to use a systemcall 'access' which will take an address as a parameter and check for us if the memory address is valid. If not the systemcall will return '0xf2' telling us the given address is invalid and then loop until the result returns a valid address.
+
+4) The last step is to check two times the presence of the egg. Because, if we don't do this check a second time the egg hunter code will jump on the wrong memory address and then execute an invalid code.
+
+The egg hunter shellcode:
 ```nasm
 insert egg hunter assembly code here
 ```
