@@ -271,9 +271,10 @@ _start:
     int 0x80            ;Go for it
 ```
 
-Let's compile and execute it ("compile_nasm.sh" file can be found in the script folder): 
+Let's compile and execute it: 
 ```console
-#./compile_nasm.sh bind_shell
+#nasm -f elf32 -o bind_shell.o bind_shell.nasm
+#ld -m elf_i386 -z execstack -o bind_shell bind_shell.o
 #./bind_shell
 ```
 
@@ -356,9 +357,9 @@ main()
 }
 ```
 
-Let's compile and execute this program (The 'compile_shellcode_file.sh' file can be found in the script directory):
+Let's compile and execute this program:
 ```console
-#./scripts/compile_shellcode_file.sh test_shellcode
+#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
 #./test_shellcode 
 Shellcode Length:  117
 ```
