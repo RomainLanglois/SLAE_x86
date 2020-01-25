@@ -1,5 +1,5 @@
 # SLAE course
-The course can be found here:
+This course can be found here:
 [Link to course](https://www.pentesteracademy.com/course?id=3)
 
 ## Assignment#3: What to do ?
