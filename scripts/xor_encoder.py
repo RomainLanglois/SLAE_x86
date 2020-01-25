@@ -2,17 +2,17 @@
 # Python XOR Encoder 
 
 shellcode = b"shellcode goes here"
-encoded = ""
+encoded_shellcode = ""
 
 print('Shellcode len: {}'.format(len(shellcode)))
 print('Encoded shellcode ...')
 
 for x in bytearray(shellcode):
-	# XOR Encoding 	
-	y = x^0xAA # <--- 0xAA: Byte used to encode the shellcode using XOR (Can be replaced by any logical operand)
-	encoded += '0x'
-	encoded += '%02x,' % y
+	# XOR Encoding using 0xAA byte
+	y = x ^ 0xAA
+	encoded_shellcode += '{},'.format(hex(y))
 
-print(encoded) # <--- Print an encoded shellcode format usable by NASM
+# Print the encoded shellcode
+print(encoded_shellcode)
 
 
