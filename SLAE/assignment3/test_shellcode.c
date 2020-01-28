@@ -10,7 +10,7 @@ unsigned char shellcode[] = \
 "SECOND EGG"
 "INSERT PAYLOAD TO EXECUTE HERE";
 
-void main()
+int main()
 {
 	// print the length of the shellcodes
 	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
