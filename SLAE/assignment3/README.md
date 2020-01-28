@@ -166,3 +166,13 @@ Let's compile the code and execute it:
 #gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
 #./test_shellcode
 ```
+
+We can use netcat to check if the port 4444 is open:
+```console
+#netstat -antp | grep 4444
+```
+
+Finaly, netcat can be used to access our bind shell 
+```console
+#nc -nv 127.0.0.1 4444
+```
