@@ -18,6 +18,7 @@ Now, let's get to work.
 ```
 Here is a graphical view:
 
+![graph_reverse_shell](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/reverse_shell.png)
 
 C pseudo Code:
 ```console
