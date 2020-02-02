@@ -25,9 +25,9 @@ The first shellcode, I decided to analyse, is a tcp reverse shell. This shellcod
 ``` 
 
 We will use IDA to understand how the assembly of this shellcode works:
-<p align="center">
+
 ![ida_reverse_shell](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_reverse_shell.png)
-</p>
+
 Based on the above code, we can divide this code in differents shellcode:
 
 1) ...
@@ -94,9 +94,9 @@ The final part is to create a more user friendly view of this shellcode (we will
 #dot reverse_shell.dot -T png -o reverse_shell.png
 ```
 Here is a graphical view of the reverse shell code:
-<p align="center">
+
 ![graph_reverse_shell](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/reverse_shell.png)
-</p>
+
 
 ## 2) Second shellcode: a tcp bind shell
 ### 2.1) First part: the assembly 
