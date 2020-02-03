@@ -15,9 +15,11 @@ Now, let's get to work.
 ### Reverse the the code using IDA
 The first shellcode, I decided to analyse, is a simple exec shellcode. This shellcode can be generated using msfvenom:
 ```console
-#msfvenom -p linux/x86/exec CMD=id -f elf -o reverse_shell 
+#msfvenom -p linux/x86/exec CMD=id -f elf -o exec 
 ``` 
 We will use IDA to understand how the assembly of this shellcode works:
+
+![ida_exec](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_exec.png)
 
 ## 2) Second shellcode: a tcp reverse shell
 ### Reverse the the code using IDA 
@@ -91,7 +93,7 @@ The parameters of this syscall can be found below:
 ### Reverse the the code using IDA
 The last shellcode, I decided to analyse, is a tcp bind shell. This shellcode can be generated using msfvenom:
 ```console
-#msfvenom -p linux/x86/linux/x86/shell_bind_tcp -f elf -o reverse_shell 
+#msfvenom -p linux/x86/linux/x86/shell_bind_tcp -f elf -o bind_shell 
 ```
 
 We will use IDA to understand how the assembly of this shellcode works:
