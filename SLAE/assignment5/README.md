@@ -21,6 +21,16 @@ We will use IDA to understand how the assembly of this shellcode works:
 
 ![ida_exec](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_exec.png)
 
+Based on the above code, this shellcode only use one systemcall. This shellcode main goal is to execute a system command using the "execve" syscall. So I'm going to describe with more details how the parameters are passed to this syscall.
+
+1) First, the shellcode initialize eax to 0xB which is the syscall number for execve.
+2) Second, it will push on the stack the string "-c%00" and move it inside edi.
+3) Third, the string "/bin/sh%00" will also be pushed on the stack and ebx will be initialized to the stack pointer esp.
+4) Fourth, the shellcode will use the call instruction to jump to next the instruction, but most important, will push the pointer which point to "id%00" into the stack. This is the parameter passed to execve in order to be executed.
+5) Fifth, the code will then push edi ("-c%00"), ebx ("/bin/sh%00") into the stack and initialize the ecx register to the stack pointer esp.
+6) Finally, we can deducted the following "execve" systemcall:
+     * execve("/bin/sh%00", ["/bin/sh%00", "-c%00", "id%00"], NULL)
+
 ## 2) Second shellcode: a tcp reverse shell
 ### Reverse the the code using IDA 
 The second shellcode, I decided to analyse, is a tcp reverse shell. This shellcode can be generated using msfvenom:
@@ -62,7 +72,7 @@ The parameters of this syscall can be found below:
 * dup2(3,1)
 * dup2(3,0)
      * "3" is the socket file descriptor.
-     * "2", "1", "0" represents STDIN, STDOUT and STDERR. 
+     * "0", "1", "2" represents respectively STDIN, STDOUT and STDERR. 
 
 ### The third systemcall:
 Based on the IDA results, the third systemcall is a "socketcall". 
