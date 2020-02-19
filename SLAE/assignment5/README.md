@@ -1,6 +1,10 @@
 # SLAE course
-This course can be found here:
-[Link to course](https://www.pentesteracademy.com/course?id=3)
+This blog post has been created for completing the requirements of the SecurityTube Linux.
+
+Assembly Expert certification:
+* https://www.pentesteracademy.com/course?id=3
+
+Student ID: SLAE-XXXXX
 
 ## Assignment#5: What to do ?
 For this assignment we have to:
