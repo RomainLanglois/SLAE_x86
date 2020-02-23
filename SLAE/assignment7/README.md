@@ -15,14 +15,16 @@ For this assignment we have to:
 Now, let's get to work.
 =
 
-### 1) Introduction:
-In order to realize this assignment, I chose to create a C code taking a shellcode (in hexadecimal format) and apply a TEA (Tiny Encryption Algorithm).
+## 1) Introduction:
+In order to realize this assignment, I chose to create a C code taking a shellcode (in hexadecimal format) and apply a TEA (Tiny Encryption Algorithm) on it. 
 
-Some pretty good links:
-* https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm
-* https://codereview.stackexchange.com/questions/187402/tiny-encryption-algorithm-implementation-in-c
+I personnaly decided to use this encryption schema to have an idea on how an encryption algorithm could work. It would have been to complicate to reimplement more complicated encryption algorithm like AES, BLOWFISH,etc... 
 
-### 2) What is a TEA ?
+And definitely, it would have been too easy to simply use a library and just call some encryption functions.
+
+TEA is designed to be a simple yet interesting encryption solution. It is easy to code it using a programming language like C. 
+
+## 2) What is a TEA ?
 In cryptography, the Tiny Encryption Algorithm (TEA) is a block cipher notable for its simplicity of description and implementation, typically a few lines of code.
 
 The cipher details can be found below:
@@ -31,38 +33,40 @@ The cipher details can be found below:
 * Structure:	Feistel network
 * Rounds:	    Variable; recommended 64 Feistel rounds (32 cycles)
 
+## 3) Shellcode used:
+Below is the shellcode I used for this assignment. It is a simple shellcode calling the execve systemcall using the JUMP-CALL-POP technique.
 
-### 3) Shellcode used:
+No need to give more details on the assembly code the commentaries are self explanatory:
 ```nasm
 ;A simple execve using the JUMP-CALL-POP technique
 global _start
 
 _start:
 	;First part: JUMP
-	jmp stage_1					    ;Jump to stage_1
+	jmp stage_1				;Jump to stage_1
 
 
 stage_2:
 	;Third part: POP
-	pop esi					        ;Pop the "/bin/bash" string inside esi
-	xor eax, eax			        ;Initialize eax to NULL
+	pop esi					;Pop the "/bin/bash" string inside esi
+	xor eax, eax				;Initialize eax to NULL
 	mov BYTE [esi + 9], al			;Push a NULL byte on the stack
 	mov DWORD [esi + 10], esi		;Push "/bin/bash on the stack"
 	mov DWORD [esi + 14], eax		;Push a NULL byte on the stack
 
-	lea ebx, [esi]					;Initiliaze ebx to "/bin/bash"
-	lea ecx, [esi + 10]				;Initialize ecx to ["/bin/bash", NULL]
-	lea edx, [esi + 14]				;Initialize edx to NULL
-	mov al, 11						;Move execve systemcall number inside eax
+	lea ebx, [esi]				;Initiliaze ebx to "/bin/bash"
+	lea ecx, [esi + 10]			;Initialize ecx to ["/bin/bash", NULL]
+	lea edx, [esi + 14]			;Initialize edx to NULL
+	mov al, 11				;Move execve systemcall number inside eax
 
 	;Systemcall details:
-    ; --> execve("/bin/sh%00", ["/bin/sh%00", NULL], NULL)
-	int 0x80						;Execute systemcall
+    	; --> execve("/bin/bash%00", ["/bin/bash%00", NULL], NULL)
+	int 0x80				;Execute systemcall
 
 
 stage_1:
 	;Second part: CALL
-	call stage_2					;Use the CALL instruction to jump to stage_2
+	call stage_2				;Use the CALL instruction to jump to stage_2
 	shell: db "/bin/bash"			;The instruction to execute using execve
 ```
 
@@ -76,7 +80,10 @@ kali@kali:/tmp/$ objdump -d ./execve|grep '[0-9a-f]:'|grep -v 'file'| grep -v 'f
 ```
 
 
-### 4) The encryption routine:
+## 4) The encryption routine:
+Below is the C code used to encrypt the previous shellcode using TEA encoding schema. 
+
+No need to give more details on the code the commentaries are self explanatory:
 ```c
 #include <stdint.h>
 #include <string.h>
@@ -184,7 +191,10 @@ kali@kali:/tmp$
 ```
 
 
-### 5) The decryption routine:
+## 5) The decryption routine:
+Below is the C code used to decrypt the previous shellcode using TEA encoding schema. 
+
+No need to give more details on the code the commentaries are self explanatory:
 ```c
 #include <stdint.h>
 #include <string.h>

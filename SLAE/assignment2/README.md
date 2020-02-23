@@ -110,8 +110,8 @@ mov esi, eax        ;move return value (file descriptor) into esi
 ```
 
 Then, we need to call the "connect" systemcall which will initiate a connection on a socket:
-```
-connect(s, (struct sockaddr *)&addr, sizeof(addr));
+```nasm
+;connect(s, (struct sockaddr *)&addr, sizeof(addr));
 
 xor eax, eax
 mov ax, 0x16a       ;connect system call number
