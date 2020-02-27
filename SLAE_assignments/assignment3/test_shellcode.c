@@ -13,12 +13,13 @@ unsigned char shellcode[] = \
 int main()
 {
 	// print the length of the shellcodes
-	printf("Egg hunter shellcode Length:  %d\n", strlen(egg_hunter));
-	printf("Egg shellcode Length:  %d\n", strlen(shellcode));
+	printf("Egg hunter shellcode length:  %d\n", strlen(egg_hunter));
+	printf("Shellcode length:  %d\n", strlen(shellcode));
 
 	// convert shellcode to a function
 	int (*ret)() = (int(*)())egg_hunter;
-	// execute the shellcode has a function
+
+	// execute the shellcode
 	ret();
 
 }
