@@ -13,10 +13,11 @@ _start:
 
 
     ;This part push the structure "sockaddr_in" on the stack
-    ;struct sockaddr_in addr;
-    ;addr.sin_family = AF_INET;
-    ;addr.sin_port = htons(4444);
-    ;addr.sin_addr.s_addr = INADDR_ANY;
+    ;C code representation:
+    ;   struct sockaddr_in addr;
+    ;   addr.sin_family = AF_INET;
+    ;   addr.sin_port = htons(4444);
+    ;   addr.sin_addr.s_addr = INADDR_ANY;
     push eax
     push eax                    ;Fill the end of the structure with 2 NULL Bytes
     push eax                    ;Initialize the variable "addr.sin_addr.s_addr" to listen for all incoming connection (INADDR_ANY) 

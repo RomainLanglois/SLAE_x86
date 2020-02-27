@@ -4,8 +4,9 @@ This github repository has been created for completing the requirements of the S
 Assembly Expert certification:
 * https://www.pentesteracademy.com/course?id=3
 
-Student ID: SLAE-XXXXX
+Student ID: SLAE-1523
 
+All the assignments can be found in the "SLAE_assignment" folder.
 
 ## A list of linux x86 system call is stored here
 ### Command

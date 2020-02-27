@@ -23,7 +23,7 @@ The second step is to create a script which will make the port configuration eas
 A bind shell is a shell that binds to a specific port on the target host to listen for incoming connections.
 
 ### 1.2) Example of a TCP bind shell in C
-An example of a TCP bind shell in C can be found below. This example has been created in order to help me to code the assembly version.
+An example of a TCP bind shell in C can be found below. This example has been created in order to help me code the assembly version.
 ```c
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -86,10 +86,11 @@ xor edx, edx                ;Initialize edx to NULL
 1.3.2) The second step is to push the "sockaddr_in" structure on the stack:
 ```nasm
 ;This part push the structure "sockaddr_in" on the stack
-;struct sockaddr_in addr;
-;addr.sin_family = AF_INET;
-;addr.sin_port = htons(4444);
-;addr.sin_addr.s_addr = INADDR_ANY;
+;C code representation:
+;   struct sockaddr_in addr;
+;   addr.sin_family = AF_INET;
+;   addr.sin_port = htons(4444);
+;   addr.sin_addr.s_addr = INADDR_ANY;
 
 push eax
 push eax                    ;Fill the end of the structure with 2 NULL Bytes
