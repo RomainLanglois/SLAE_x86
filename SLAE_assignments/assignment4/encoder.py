@@ -8,17 +8,17 @@ encoded_shellcode = ""
 print('Shellcode len: {}'.format(len(shellcode)))
 print('Encoded shellcode ...')
 
-# Encode the shellcode in two steps (A XOR then a NOT):
+# Each Bytes of the shellcode will be encoded two times using a XOR then a NOT encoder
 for x in bytearray(shellcode):
-	# XOR encoder part
+	# XOR encoder:
 	# 0xAA is the Byte used to encode
 	y = x ^ 0xAA
 
-	# NOT encoder part
+	# NOT encoder:
 	y = ~y
 	encoded_shellcode += '{},'.format(hex(y & 0xFF))
 
-# Print an encoded shellcode format
+# Print the encoded shellcode
 print(encoded_shellcode)
 
 

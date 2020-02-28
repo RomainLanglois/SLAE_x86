@@ -1,5 +1,4 @@
-;A simple NOT and XOR decoder
-;Using the JUMP-CALL-POP method
+;A simple NOT and XOR decoder using the JUMP-CALL-POP method
 
 global _start
 
@@ -11,14 +10,14 @@ _start:
 
 ;POP PART
 stage2:
-    pop esi                         ;pop the shellcode inside esi
+    pop esi                         ;Pop the shellcode inside esi
 
 ;DECRYPTION PART
 stage3:
-    not BYTE [esi]                  ;Start the decryption process by a NOT on the value inside esi
-    xor BYTE [esi], 0xAA            ;Then XOR the value pointed in esi by 0xAA
+    not BYTE [esi]                  ;Start the decryption process by a NOT on the value pointed by esi
+    xor BYTE [esi], 0xAA            ;Then XOR the value pointed by esi with 0xAA
     inc esi                         ;Increment the address stores inside esi
-    loop stage3                     ;loop until the cl == 0, which means the shellcode is decoded
+    loop stage3                     ;Loop until the cl == 0, which means the shellcode is decoded
 
     jmp shellcode                   ;Jump to the decoded shellcode and execute it
 
