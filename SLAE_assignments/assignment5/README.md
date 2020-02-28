@@ -4,7 +4,7 @@ This blog post has been created for completing the requirements of the SecurityT
 Assembly Expert certification:
 * https://www.pentesteracademy.com/course?id=3
 
-Student ID: SLAE-XXXXX
+Student ID: SLAE-1523
 
 ## Assignment#5: What to do ?
 For this assignment we have to:
@@ -29,7 +29,7 @@ Saved as: reverse_shell
 ``` 
 We will use IDA to understand how the assembly of this shellcode works:
 
-![ida_exec](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_exec.png)
+![ida_exec](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_exec.png)
 
 Based on the above code, this shellcode only use one systemcall. This shellcode main goal is to execute a system command using the "execve" syscall. So I'm going to describe with more details how the parameters are passed to this syscall.
 
@@ -56,7 +56,7 @@ Saved as: reverse_shell
 
 We will use IDA to understand how the assembly of this shellcode works:
 
-![ida_reverse_shell](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_reverse_shell.png)
+![ida_reverse_shell](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_reverse_shell/IDA_reverse_shell.png)
 
 Based on the above code, we can divide this code in four parts: 
 1) The first part will explain the first call to "socketcall".
@@ -66,6 +66,8 @@ Based on the above code, we can divide this code in four parts:
 
 ### The first systemcall:
 Based on the IDA results, the first systemcall is a "socketcall". 
+
+![ida_reverse_shell_S1](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_reverse_shell/IDA_reverse_shell_S1.png)
 
 The parameters of this syscall can be found below:
 * socketcall(1, 0xffffd6b4)
@@ -83,6 +85,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 ### The second systemcall:
 Based on the IDA results, the second systemcall is a "dup2". "dup2" is called three times thanks to a loop. Those syscalls redirect the STDIN, STDOUT and STDERR into the socket. 
 
+![ida_reverse_shell_S2](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_reverse_shell/IDA_reverse_shell_S2.png)
+
 The parameters of this syscall can be found below:
 * dup2(3,2)
 * dup2(3,1)
@@ -92,6 +96,8 @@ The parameters of this syscall can be found below:
 
 ### The third systemcall:
 Based on the IDA results, the third systemcall is a "socketcall". 
+
+![ida_reverse_shell_S3](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_reverse_shell/IDA_reverse_shell_S3.png)
 
 The parameters of this syscall can be found below:
 * socketcall(3, 0xffffd6a4)
@@ -112,6 +118,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 ### The fourth systemcall:
 Based on the IDA results, the fourth systemcall is a "execve". This syscall is reponsible from spawning a shell. This function takes two parameters "/bin/sh%00" and two NULL bytes. 
 
+![ida_reverse_shell_S4](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_reverse_shell/IDA_reverse_shell_S4.png)
+
 The parameters of this syscall can be found below:
 * execve("/bin/sh%00", ["/bin/sh%00", NULL], NULL)
 
@@ -130,7 +138,7 @@ Saved as: bind_shell
 
 We will use IDA to understand how the assembly of this shellcode works:
 
-![ida_bind_shell](https://github.com/RomainLanglois/Shellcode/blob/master/SLAE/assignment5/IDA_bind_shell.png)
+![ida_bind_shell](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell.png)
 
 Based on the above code, we can divide this code in six parts: 
 1) The first part will explain the first call to "socketcall".
@@ -142,6 +150,8 @@ Based on the above code, we can divide this code in six parts:
 
 ### The first systemcall:
 Based on the IDA results, the first systemcall is a "socketcall".
+
+![ida_bind_shell_S1](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S1.png)
 
 The parameters of this syscall can be found below:
 * socketcall(1, 0xffffd1c4)
@@ -158,6 +168,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 
 ### The second systemcall:
 Based on the IDA results, the second systemcall is a "socketcall". 
+
+![ida_bind_shell_S2](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S2.png)
 
 The parameters of this syscall can be found below:
 * socketcall(2, 0xffffd1b8)
@@ -177,6 +189,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 ### The third systemcall:
 Based on the IDA results, the third systemcall is a "socketcall". 
 
+![ida_bind_shell_S3](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S3.png)
+
 The parameters of this syscall can be found below:
 * socketcall(4, 0xffffd1b8)
 
@@ -190,6 +204,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 
 ### The fourth systemcall:
 Based on the IDA results, the fourth systemcall is a "socketcall". 
+
+![ida_bind_shell_S4](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S4.png)
 
 The parameters of this syscall can be found below:
 * socketcall(5, 0xffffd1b8)
@@ -209,6 +225,8 @@ Here is the real function call behind "socketcall" and all of its parameters:
 ### The fifth systemcall:
 Based on the IDA results, the second systemcall is a "dup2". "dup2" is called three times thanks to a loop. Those syscalls redirect the STDIN, STDOUT and STDERR into the socket. 
 
+![ida_bind_shell_S5](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S5.png)
+
 The parameters of this syscall can be found below:
 * dup2(3,2)
 * dup2(3,1)
@@ -218,6 +236,8 @@ The parameters of this syscall can be found below:
 
 ### The last systemcall:
 Based on the IDA results, the fourth systemcall is a "execve". This syscall is reponsible from spawning a shell. This function takes two parameters "/bin/sh%00" and two NULL bytes. 
+
+![ida_bind_shell_S6](https://github.com/RomainLanglois/SLAE_x86/blob/master/SLAE_assignments/assignment5/IDA_bind_shell/IDA_bind_shell_S6.png)
 
 The parameters of this syscall can be found below:
 * execve("/bin/sh%00", ["/bin/sh%00", NULL], NULL)
