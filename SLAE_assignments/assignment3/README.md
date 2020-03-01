@@ -151,6 +151,7 @@ void main()
 
 Let's compile it and execute it:
 ```console
+kali@kali:/tmp$ gcc test_shellcode.c -o test_shellcode -m32 -fno-stack-protector -z execstack
 kali@kali:/tmp$ ./test_shellcode 
 Egg hunter shellcode length:  37
 Egg shellcode length:  31

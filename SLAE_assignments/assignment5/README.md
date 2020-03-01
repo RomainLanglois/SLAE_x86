@@ -28,13 +28,13 @@ The first shellcode, I decided to analyse, is a simple exec shellcode.
 
 This shellcode can be generated using msfvenom:
 ```console
-kali@kali:/tmp$ msfvenom -p linux/x86/shell_reverse_tcp -f elf -o reverse_shell 
+kali@kali:/tmp$ msfvenom -p linux/x86/exec CMD=id -f elf -o execve
 [-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
 [-] No arch selected, selecting arch: x86 from the payload
 No encoder or badchars specified, outputting raw payload
-Payload size: 68 bytes
-Final size of elf file: 152 bytes
-Saved as: reverse_shell 
+Payload size: 38 bytes
+Final size of elf file: 122 bytes
+Saved as: execve
 ``` 
 We will use IDA to understand how this shellcode works:
 
