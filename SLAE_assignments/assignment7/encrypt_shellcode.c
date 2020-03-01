@@ -5,7 +5,7 @@
 
 
 
-/* This function is used to encrypt a message. The message is divided in 64 bits blocks and then encrypt with the 128 bits key.
+/* This function is used to encrypt a message. The message is divided in blocks of 64 bits and then encrypt with a 128 bits key.
 :param uint32_t v[2] -> the message to encrypt:
 :param uint32_t k[4] -> the key used to encrypt:
 */
@@ -29,17 +29,17 @@ void encrypt (uint32_t v[2], uint32_t k[4])
     v[1]=v1;                                       
 }
 
+
 /* This function is used to divided the shellcode in block of 64 bits and then call the encrypt function.
 :param char *shellcode  -> the shellcode to encrypt:
 :param uint32_t k[4]    -> the key used to encrypt:
 */
 void encryptBlocks(char *shellcode, uint32_t *key)
 {   
-    // Declare variables
     int i = 0, blockcount;
     
-    // Devide the shellcode in blockcount
-    // 8 is the number of Bytes (8 * 8 == 64 bits)
+    // Divide the shellcode in blocks of 64 bits
+    // 8 is the number of Bytes (8 * 8 = 64 bits)
     blockcount = strlen(shellcode) / 8;
 
     // Conditionnal ternary operator
@@ -62,8 +62,10 @@ void encryptBlocks(char *shellcode, uint32_t *key)
 void printShellcode(char *shellcode)
 {
     int i;
+
     // Print the shellcode length
     printf("Shellcode length = %d\n", strlen(shellcode));
+    
     // Loop for each element in the shellcode array
     for(i = 0; i < strlen(shellcode); i++)
     {

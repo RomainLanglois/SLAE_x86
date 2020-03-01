@@ -4,13 +4,13 @@ This blog post has been created for completing the requirements of the SecurityT
 Assembly Expert certification:
 * https://www.pentesteracademy.com/course?id=3
 
-Student ID: SLAE-XXXXX
+Student ID: SLAE-1523
 
 ## Assignment#7: What to do ?
 For this assignment we have to:
 * Create a custom crypter
-    * Feel free to use any existing encryption schema
-    * Can use any programming language
+    * We can use any existing encryption schema
+    * We can use any programming language
 
 Now, let's get to work.
 =
@@ -22,21 +22,24 @@ I personnaly decided to use this encryption schema to have an idea on how an enc
 
 And definitely, it would have been too easy to simply use a library and just call some encryption functions.
 
-TEA is designed to be a simple yet interesting encryption solution. It is easy to code it using a programming language like C. 
+TEA is designed to be a simple yet interesting encryption solution. It is easy to code using a programming language like C. 
 
 ## 2) What is a TEA ?
 In cryptography, the Tiny Encryption Algorithm (TEA) is a block cipher notable for its simplicity of description and implementation, typically a few lines of code.
 
 The cipher details can be found below:
-* Key sizes:	128 bits
-* Block sizes:	64 bits
+* Key size:	128 bits
+* Block size:	64 bits
 * Structure:	Feistel network
 * Rounds:	    Variable; recommended 64 Feistel rounds (32 cycles)
+
+
+A very good PDF explaining the TEA encryption algorithm can be found here:
+* [Link to PDF](https://tayloredge.com/reference/Mathematics/TEA-XTEA.pdf)
 
 ## 3) Shellcode used:
 Below is the shellcode I used for this assignment. It is a simple shellcode calling the execve systemcall using the JUMP-CALL-POP technique.
 
-No need to give more details on the assembly code the commentaries are self explanatory:
 ```nasm
 ;A simple execve using the JUMP-CALL-POP technique
 global _start
@@ -51,7 +54,7 @@ stage_2:
 	pop esi				;Pop the "/bin/bash" string inside esi
 	xor eax, eax				;Initialize eax to NULL
 	mov BYTE [esi + 9], al		;Push a NULL byte on the stack
-	mov DWORD [esi + 10], esi		;Push "/bin/bash on the stack"
+	mov DWORD [esi + 10], esi		;Push "/bin/bash" on the stack
 	mov DWORD [esi + 14], eax		;Push a NULL byte on the stack
 
 	lea ebx, [esi]			;Initiliaze ebx to "/bin/bash"
@@ -67,7 +70,7 @@ stage_2:
 stage_1:
 	;Second part: CALL
 	call stage_2				;Use the CALL instruction to jump to stage_2
-	shell: db "/bin/bash"		;The instruction to execute using execve
+	shell: db "/bin/bash"		;The instruction to execute by execve
 ```
 
 Let's compile it and get its hexadecimal representation:
@@ -83,7 +86,7 @@ kali@kali:/tmp/$ objdump -d ./execve|grep '[0-9a-f]:'|grep -v 'file'| grep -v 'f
 ## 4) The encryption routine:
 Below is the C code used to encrypt the previous shellcode using TEA encoding schema. 
 
-No need to give more details on the code the commentaries are self explanatory:
+All the details needed to understand this C code can be found by reading the commentaries:
 ```c
 #include <stdint.h>
 #include <string.h>
@@ -92,7 +95,7 @@ No need to give more details on the code the commentaries are self explanatory:
 
 
 
-/* This function is used to encrypt a message. The message is divided in 64 bits blocks and then encrypt with the 128 bits key.
+/* This function is used to encrypt a message. The message is divided in blocks of 64 bits and then encrypt with a 128 bits key.
 :param uint32_t v[2] -> the message to encrypt:
 :param uint32_t k[4] -> the key used to encrypt:
 */
@@ -116,17 +119,17 @@ void encrypt (uint32_t v[2], uint32_t k[4])
     v[1]=v1;                                       
 }
 
+
 /* This function is used to divided the shellcode in block of 64 bits and then call the encrypt function.
 :param char *shellcode  -> the shellcode to encrypt:
 :param uint32_t k[4]    -> the key used to encrypt:
 */
 void encryptBlocks(char *shellcode, uint32_t *key)
 {   
-    // Declare variables
     int i = 0, blockcount;
     
-    // Devide the shellcode in blockcount
-    // 8 is the number of Bytes (8 * 8 == 64 bits)
+    // Divide the shellcode in blocks of 64 bits
+    // 8 is the number of Bytes (8 * 8 = 64 bits)
     blockcount = strlen(shellcode) / 8;
 
     // Conditionnal ternary operator
@@ -149,8 +152,10 @@ void encryptBlocks(char *shellcode, uint32_t *key)
 void printShellcode(char *shellcode)
 {
     int i;
+
     // Print the shellcode length
     printf("Shellcode length = %d\n", strlen(shellcode));
+    
     // Loop for each element in the shellcode array
     for(i = 0; i < strlen(shellcode); i++)
     {
@@ -192,9 +197,9 @@ kali@kali:/tmp$
 
 
 ## 5) The decryption routine:
-Below is the C code used to decrypt the previous shellcode using TEA encoding schema. 
+Below is the C code used to decrypt the shellcode. 
 
-No need to give more details on the code the commentaries are self explanatory:
+All the details needed to understand this C code can be found by reading the commentaries:
 ```c
 #include <stdint.h>
 #include <string.h>
@@ -203,7 +208,7 @@ No need to give more details on the code the commentaries are self explanatory:
 
 
 
-/* This function is used to decrypt a message. The message is divided in 64 bits blocks and then decrypt with the 128 bits key.
+/* This function is used to decrypt a message. The message is divided in blocks of 64 bits and then decrypt with a 128 bits key.
 :param uint32_t v[2] -> the message to decrypt:
 :param uint32_t k[4] -> the key used to decrypt:
 */
@@ -228,15 +233,14 @@ void decrypt (uint32_t v[2], uint32_t k[4])
 
 /* This function is used to divided the encrypted shellcode in block of 64 bits and then call the decrypt function.
 :param char *shellcode -> the shellcode to decrypt:
-:param uint32_t k[4] -> the key used to decrypt:
+:param uint32_t k[4]   -> the key used to decrypt:
 */
 void decryptBlocks(char *shellcode, uint32_t *key)
 {   
-    // Declare variables
     int i = 0, blockcount;
     
-    // Devide the shellcode in blockcount
-    // 8 is the number of Bytes (8 * 8 == 64 bits)
+    // Divide the shellcode in blocks of 64 bits
+    // 8 is the number of Bytes (8 * 8 = 64 bits)
     blockcount = strlen(shellcode) / 8;
 
     // Conditionnal ternary operator
@@ -245,7 +249,7 @@ void decryptBlocks(char *shellcode, uint32_t *key)
     //     --> else: blockcount = blockcount
     blockcount = 0 ? 1 : blockcount;
 
-    // For each block of 64 bits the shellcode is encrypted with the given key
+    // For each block of 64 bits the shellcode is decrypted with the given key
     while (i < blockcount) {
         decrypt((uint32_t *)shellcode + (i * 2), key);
         i += 1;
@@ -259,8 +263,10 @@ void decryptBlocks(char *shellcode, uint32_t *key)
 void printShellcode(char *shellcode)
 {
     int i;
+
     // Print the shellcode length
     printf("Shellcode length = %d\n", strlen(shellcode));
+
     // Loop for each element in the shellcode array
     for(i = 0; i < strlen(shellcode); i++)
     {
@@ -275,13 +281,11 @@ void printShellcode(char *shellcode)
 int main()
 {
     // 128 bits decrypt key (32 * 4 bits)
+    // A PRETTY BAD IDEA TO HARDCODE IT IN THE CODE
     uint32_t key[4] = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
 
-    // Shellcode to dencrypt
+    // Shellcode to decrypt
     unsigned char shellcode[] = "\x38\xd1\x0d\x2b\xdf\xc6\xf2\x1a\x97\x2b\xfc\x72\x5e\xcf\x67\x39\x10\xa7\xd4\x41\x29\x0a\x8e\xf6\xe2\xcb\x7e\x5e\x20\xff\x86\x71\x81\xf2\xca\x0b\x7d\x1a\x3c\xff";
-
-    // Print the encrypted shellcode
-    printShellcode(shellcode);
 
     // Decrypt the shellcode
     decryptBlocks(shellcode, key);
@@ -289,6 +293,7 @@ int main()
     // Convert the shellcode variable into a pointer to a function	
     int (*ret)() = (int(*)())shellcode;
     printf("Executing Shellcode....\n\n\n");
+
     // Execute the function
     ret();
     
