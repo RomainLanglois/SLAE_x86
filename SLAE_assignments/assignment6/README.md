@@ -14,6 +14,9 @@ For this assignment we have to:
 Bonus points:
 * Making the shellcode shorter than the original.
 
+Note:
+* All the commands used for this assignment were done on the last 64 bits version of KALI Linux.
+
 Now, let's get to work.
 =
 

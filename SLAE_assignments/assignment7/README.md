@@ -12,6 +12,9 @@ For this assignment we have to:
     * We can use any existing encryption schema
     * We can use any programming language
 
+Note:
+* All the commands used for this assignment were done on the last 64 bits version of KALI Linux.
+
 Now, let's get to work.
 =
 

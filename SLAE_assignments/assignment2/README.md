@@ -16,6 +16,9 @@ This shellcode needs to be able to:
 
 The second step is to create a script which will make the IP and port configuration easy
 
+Note:
+* All the commands used for this assignment were done on the last 64 bits version of KALI Linux.
+
 ### 1.1) What is a reverse shell
 A TCP reverse shell connects back to a remote machine, then executes a shell and redirects all input & output to the socket.
 

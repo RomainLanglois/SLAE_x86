@@ -12,6 +12,9 @@ This assignment is divided in 3 steps:
 * Create a working demo of an egg hunter
 * Make the egg hunter easily configurable for different payloads
 
+Note:
+* All the commands used for this assignment were done on the last 64 bits version of KALI Linux.
+
 Now, let's get to work.
 =
 

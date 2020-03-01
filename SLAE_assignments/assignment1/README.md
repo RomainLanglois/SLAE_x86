@@ -16,6 +16,8 @@ This shellcode needs to be able to:
 
 The second step is to create a script which will make the port configuration easy.
 
+Note:
+* All the commands used for this assignment were done on the last 64 bits version of KALI Linux.
 
 ## 1) First step: create a TCP bind shell
 ### 1.1) What is a bind shell
